@@ -1539,12 +1539,18 @@ async function saveWorker(id) {
   };
   if(id===null) { DB.workers.push({ id:DB.nextWId++, ...data }); }
   else { const w=DB.workers.find(x=>String(x.id)===String(id)); if(w) Object.assign(w,data); }
+  showBanner('儲存中...');
+  try { await dbSaveWorkers(); } catch(e) { console.error(e); }
+  hideBanner();
   closeOverlay('worker-edit-modal');
   renderWorkerCards();
   showToast('師傅資料已儲存 ✓');
 }
 async function deleteWorker(id) {
   if(!confirm('確定刪除此師傅？')) return;
+  showBanner('刪除中...');
+  try { await dbDelWorker(id); } catch(e) { console.error(e); }
+  hideBanner();
   DB.workers = DB.workers.filter(x=>String(x.id)!==String(id));
   closeOverlay('worker-edit-modal');
   renderWorkerCards();
