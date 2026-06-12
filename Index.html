@@ -1,0 +1,1807 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FORM FEEL 案場管理系統 v2</title>
+<style>
+:root {
+  --cream:#F0EDE8;--stone:#E5E0D8;--bronze:#7A5C3E;--bl:#A07850;--bd:#5A3E28;
+  --text:#2C2318;--muted:#8A7A6A;--white:#FDFCFA;--border:#D8D0C4;
+  --green:#5A7A5A;--red:#8A3A2A;--amber:#A07828;--blue:#3A5A8A;
+  --shadow:0 2px 12px rgba(90,60,30,.10);--r:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'PingFang TC','Noto Sans TC',sans-serif;background:var(--cream);color:var(--text);min-height:100vh}
+/* SCROLLBAR */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:var(--stone)}
+::-webkit-scrollbar-thumb{background:var(--bl);border-radius:3px}
+
+/* HEADER */
+header{background:var(--white);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;gap:14px;height:56px;position:sticky;top:0;z-index:100;box-shadow:0 1px 8px rgba(90,60,30,.08)}
+.logo-circle{width:36px;height:36px;border-radius:50%;background:radial-gradient(circle at 60% 35%,#C8A878,#7A5C3E 55%,#3C2414);display:flex;align-items:center;justify-content:center;flex-shrink:0;position:relative;overflow:hidden}
+.logo-shape{width:24px;height:18px;position:relative}
+.logo-shape::before,.logo-shape::after{content:'';position:absolute;width:11px;height:17px;border-radius:50% 50% 50% 50%/60% 60% 40% 40%;background:linear-gradient(135deg,#F0D8B0,#C8A060,#7A4A20)}
+.logo-shape::before{left:0;top:0;transform:rotate(-35deg)}
+.logo-shape::after{right:0;top:2px;transform:rotate(145deg)}
+.brand-name{font-size:14px;font-weight:700;letter-spacing:2px;color:var(--bd)}
+.brand-sub{font-size:10px;color:var(--muted);letter-spacing:1px}
+.hright{margin-left:auto;display:flex;align-items:center;gap:8px}
+
+/* BUTTONS */
+.btn{padding:7px 15px;border-radius:6px;border:none;cursor:pointer;font-size:13px;font-family:inherit;font-weight:500;transition:all .15s;display:inline-flex;align-items:center;gap:5px}
+.btn-primary{background:var(--bronze);color:#fff}
+.btn-primary:hover{background:var(--bd)}
+.btn-ghost{background:transparent;color:var(--bronze);border:1.5px solid var(--bl)}
+.btn-ghost:hover{background:var(--stone)}
+.btn-danger{background:var(--red);color:#fff}
+.btn-danger:hover{background:#6A2A1A}
+.btn-sm{padding:5px 11px;font-size:12px}
+.btn-xs{padding:3px 8px;font-size:11px;border-radius:4px}
+
+/* TABS */
+.tabs{display:flex;padding:0 24px;background:var(--white);border-bottom:1px solid var(--border);overflow-x:auto}
+.tab{padding:11px 18px;font-size:13px;font-weight:500;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;white-space:nowrap}
+.tab.active{color:var(--bronze);border-bottom-color:var(--bronze)}
+.tab:hover:not(.active){color:var(--text)}
+
+/* MAIN */
+main{padding:20px 24px;max-width:1400px;margin:0 auto}
+.panel{display:none}
+.panel.active{display:block}
+
+/* SUMMARY CARDS */
+.sum-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.sum-card{background:var(--white);border-radius:var(--r);padding:16px 18px;box-shadow:var(--shadow);border-left:3px solid var(--bl)}
+.sum-card.warn{border-left-color:var(--amber)}
+.sum-card.danger{border-left-color:var(--red)}
+.sum-card.ok{border-left-color:var(--green)}
+.sum-label{font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase}
+.sum-value{font-size:24px;font-weight:700;color:var(--text);margin-top:3px}
+.sum-detail{font-size:11px;color:var(--muted);margin-top:2px}
+
+/* SECTION HEADER */
+.sec-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.sec-title{font-size:15px;font-weight:700;color:var(--bd)}
+
+/* PROJECT GRID */
+.proj-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px}
+.proj-card{background:var(--white);border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden;cursor:pointer;transition:transform .15s,box-shadow .15s;border:1.5px solid transparent}
+.proj-card:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(90,60,30,.14);border-color:var(--bl)}
+.pc-header{padding:13px 16px 9px;display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.pc-name{font-size:15px;font-weight:700}
+.pc-addr{font-size:11px;color:var(--muted);margin-top:2px}
+.sbadge{padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap;flex-shrink:0}
+.s施工中{background:#EAF2EA;color:var(--green)}
+.s待開工{background:#FEF3DC;color:var(--amber)}
+.s已完工{background:#F0F0F0;color:#888}
+.s暫停{background:#FDEAEA;color:var(--red)}
+.pc-body{padding:0 16px 12px}
+.pc-meta{display:grid;grid-template-columns:1fr 1fr;gap:5px 10px;margin-bottom:8px}
+.mi{font-size:12px}
+.ml{color:var(--muted)}
+.mv{color:var(--text);font-weight:500}
+.atag{font-size:11px;padding:2px 8px;border-radius:4px;font-weight:500}
+.atag.warn{background:#FEF3DC;color:var(--amber)}
+.atag.danger{background:#FDEAEA;color:var(--red)}
+.atag.info{background:#EEF1F8;color:var(--blue)}
+.pbar{height:4px;background:var(--stone);border-radius:2px;overflow:hidden;margin-top:8px}
+.pfill{height:100%;background:linear-gradient(90deg,var(--bl),var(--bronze));border-radius:2px}
+.pc-footer{padding:7px 16px;border-top:1px solid var(--stone);display:flex;align-items:center;justify-content:space-between;font-size:11px;color:var(--muted)}
+
+/* MODALS */
+.overlay{position:fixed;inset:0;background:rgba(30,20,10,.5);z-index:200;display:none;align-items:flex-start;justify-content:center;padding:30px 16px;overflow-y:auto}
+.overlay.open{display:flex}
+.modal{background:var(--white);border-radius:14px;width:100%;box-shadow:0 20px 60px rgba(30,20,10,.25);overflow:hidden;animation:slideUp .2s ease;position:relative}
+@keyframes slideUp{from{transform:translateY(16px);opacity:0}to{transform:translateY(0);opacity:1}}
+.mhdr{background:linear-gradient(120deg,var(--bd),var(--bronze));padding:18px 22px;display:flex;align-items:center;justify-content:space-between;color:#fff}
+.mtitle{font-size:17px;font-weight:700}
+.mclose{background:rgba(255,255,255,.15);border:none;color:#fff;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center}
+.mclose:hover{background:rgba(255,255,255,.25)}
+.mbody{padding:22px;max-height:calc(100vh - 140px);overflow-y:auto}
+
+/* MODAL TABS */
+.mtabs{display:flex;border-bottom:1px solid var(--stone);margin-bottom:18px;overflow-x:auto}
+.mtab{padding:9px 16px;font-size:13px;font-weight:500;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap}
+.mtab.active{color:var(--bronze);border-bottom-color:var(--bronze)}
+.mpanel{display:none}
+.mpanel.active{display:block}
+
+/* FORM */
+.fg{display:flex;flex-direction:column;gap:5px;margin-bottom:10px}
+.fg-row{display:grid;gap:12px;margin-bottom:10px}
+.fg-2{grid-template-columns:1fr 1fr}
+.fg-3{grid-template-columns:1fr 1fr 1fr}
+.fl{font-size:12px;font-weight:600;color:var(--muted)}
+.fi,.fs,.fta{padding:8px 11px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;font-family:inherit;background:var(--white);color:var(--text);transition:border-color .15s;width:100%}
+.fi:focus,.fs:focus,.fta:focus{outline:none;border-color:var(--bl)}
+.fta{resize:vertical;min-height:65px}
+.fi[readonly]{background:var(--stone);color:var(--muted)}
+
+/* SECTION CARD */
+.sec-card{background:var(--white);border-radius:var(--r);box-shadow:var(--shadow);padding:18px;margin-bottom:14px}
+.sec-card-title{font-size:12px;font-weight:700;letter-spacing:1.5px;color:var(--bronze);text-transform:uppercase;border-bottom:1px solid var(--stone);padding-bottom:8px;margin-bottom:14px}
+
+/* TABLE */
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{text-align:left;padding:8px 11px;background:var(--stone);font-weight:600;font-size:12px;color:var(--muted)}
+.tbl td{padding:8px 11px;border-bottom:1px solid var(--stone);vertical-align:middle}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr:hover td{background:#F8F5F1}
+
+/* STOCK */
+.sok{color:var(--green);font-weight:600}
+.slow{color:var(--amber);font-weight:600}
+.sout{color:var(--red);font-weight:600}
+
+/* GANTT */
+.gantt-wrap{overflow-x:auto}
+.gtbl{border-collapse:collapse;font-size:12px;min-width:700px;width:100%}
+.gtbl th{padding:6px 8px;background:var(--bronze);color:#fff;font-weight:600;font-size:11px;border:1px solid var(--bd);text-align:center}
+.gtbl th:first-child{text-align:left;width:120px}
+.gtbl td{border:1px solid var(--border);padding:4px 6px;text-align:center}
+.gtbl td:first-child{text-align:left;font-weight:600}
+.gbar{height:16px;border-radius:3px;background:linear-gradient(90deg,var(--bl),var(--bronze))}
+.gbar.pause{background:linear-gradient(90deg,#ccc,#aaa)}
+.gbar.done{background:linear-gradient(90deg,var(--green),#3A5A3A)}
+.gwknd{background:#F5F0EA}
+
+/* CHIPS */
+.chip{display:inline-flex;align-items:center;gap:5px;background:var(--stone);border-radius:20px;padding:3px 10px;font-size:12px;font-weight:600;color:var(--bd);margin:2px}
+.chip-rm{background:none;border:none;cursor:pointer;color:var(--muted);font-size:12px;padding:0;line-height:1}
+.chip-rm:hover{color:var(--red)}
+
+/* COST */
+.cost-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--stone);font-size:13px}
+.cost-row:last-child{border-bottom:none}
+.cost-lbl{color:var(--muted)}
+.cost-val{font-weight:600}
+.cost-total{display:flex;justify-content:space-between;padding:11px 16px;background:var(--bd);color:#fff;border-radius:8px;font-weight:700;font-size:15px;margin-top:10px}
+
+/* ALERT ITEM */
+.ali{display:flex;align-items:flex-start;gap:12px;padding:12px 16px;background:var(--white);border-radius:var(--r);box-shadow:var(--shadow);margin-bottom:10px;border-left:3px solid var(--amber)}
+.ali.urgent{border-left-color:var(--red)}
+
+/* AREA CARD */
+.area-card{background:var(--stone);border-radius:8px;padding:14px;margin-bottom:10px;position:relative}
+.area-img{width:100%;height:120px;object-fit:cover;border-radius:6px;margin-bottom:8px;cursor:pointer}
+.area-img-placeholder{width:100%;height:80px;background:var(--border);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--muted);margin-bottom:8px;cursor:pointer;border:2px dashed var(--border)}
+.area-img-placeholder:hover{border-color:var(--bl);color:var(--bronze)}
+
+/* PAYMENT ROW */
+.pay-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--stone);font-size:13px}
+.pay-row:last-child{border-bottom:none}
+
+/* WORKER CARD */
+.worker-card{background:var(--white);border-radius:var(--r);box-shadow:var(--shadow);padding:16px;position:relative;cursor:pointer;transition:all .15s;border:1.5px solid transparent}
+.worker-card:hover{border-color:var(--bl);transform:translateY(-1px)}
+.worker-avatar{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--bl),var(--bd));display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;font-weight:700;flex-shrink:0}
+.worker-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+
+/* TOGGLE */
+.tog-grp{display:flex;background:var(--stone);border-radius:8px;padding:3px;gap:2px}
+.tog-btn{padding:5px 13px;border-radius:6px;border:none;background:transparent;font-size:12px;font-family:inherit;cursor:pointer;color:var(--muted);font-weight:500;transition:all .15s}
+.tog-btn.active{background:var(--white);color:var(--bronze);box-shadow:0 1px 4px rgba(90,60,30,.12)}
+
+/* UNIT SWITCH */
+.unit-sw{display:inline-flex;background:var(--stone);border-radius:6px;overflow:hidden;border:1px solid var(--border)}
+.unit-opt{padding:5px 12px;font-size:12px;cursor:pointer;border:none;background:transparent;font-family:inherit;font-weight:500;color:var(--muted);transition:all .15s}
+.unit-opt.active{background:var(--bronze);color:#fff}
+
+/* INLINE EDIT */
+.editable{cursor:text;border-bottom:1.5px dashed transparent;transition:border-color .15s;min-width:40px;display:inline-block}
+.editable:hover{border-bottom-color:var(--bl)}
+.editable:focus{outline:none;border-bottom-color:var(--bronze);background:rgba(122,92,62,.05);border-radius:3px 3px 0 0}
+
+/* PROGRESS EDIT */
+.prog-wrap{display:flex;align-items:center;gap:10px;margin-top:6px}
+.prog-slider{flex:1;accent-color:var(--bronze)}
+
+/* RESPONSIVE */
+@media(max-width:768px){
+  main{padding:12px}
+  .sum-row{grid-template-columns:1fr 1fr}
+  .fg-3{grid-template-columns:1fr 1fr}
+  .fg-2{grid-template-columns:1fr}
+  .mbody{padding:14px}
+}
+
+/* TAGS INPUT */
+.tags-input{display:flex;flex-wrap:wrap;gap:4px;padding:6px 10px;border:1.5px solid var(--border);border-radius:7px;min-height:38px;cursor:text;background:var(--white)}
+.tags-input:focus-within{border-color:var(--bl)}
+.tags-input input{border:none;outline:none;font-size:13px;font-family:inherit;background:transparent;color:var(--text);min-width:80px;flex:1}
+
+/* PHOTO GRID */
+.photo-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:8px}
+.photo-thumb{width:100%;aspect-ratio:1;object-fit:cover;border-radius:6px;cursor:pointer}
+.photo-add{width:100%;aspect-ratio:1;background:var(--stone);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:22px;color:var(--muted);cursor:pointer;border:2px dashed var(--border)}
+.photo-add:hover{border-color:var(--bl);color:var(--bronze)}
+
+/* NOTICE */
+.notice{padding:10px 14px;border-radius:8px;font-size:12px;margin-bottom:12px}
+.notice.info{background:#EEF1F8;color:var(--blue);border-left:3px solid var(--blue)}
+.notice.warn{background:#FEF3DC;color:var(--amber);border-left:3px solid var(--amber)}
+</style>
+</head>
+<body>
+
+<header>
+  <img src="data:image/jpeg;base64,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" style="width:36px;height:36px;border-radius:50%;object-fit:cover;flex-shrink:0">
+  <div>
+    <div class="brand-name">FORM FEEL</div>
+    <div class="brand-sub">案場管理系統</div>
+  </div>
+  <div class="hright">
+    <button class="btn btn-ghost btn-sm" onclick="openWorkerDB()">👷 師傅資料庫</button>
+    <button class="btn btn-ghost btn-sm" onclick="openNewProject()">＋ 新增案場</button>
+    <button class="btn btn-primary btn-sm" onclick="showTab('alerts')">🔔 提醒 <span id="alert-count" style="background:rgba(255,255,255,.25);border-radius:10px;padding:1px 6px;font-size:11px;">0</span></button>
+  </div>
+</header>
+
+<div class="tabs">
+  <div class="tab active" onclick="showTab('overview')" data-tab="overview">總覽</div>
+  <div class="tab" onclick="showTab('projects')" data-tab="projects">案場列表</div>
+  <div class="tab" onclick="showTab('schedule')" data-tab="schedule">工期總表</div>
+  <div class="tab" onclick="showTab('materials')" data-tab="materials">備料清單</div>
+  <div class="tab" onclick="showTab('cost')" data-tab="cost">費用試算</div>
+  <div class="tab" onclick="showTab('alerts')" data-tab="alerts">提醒事項</div>
+</div>
+
+<main>
+  <div class="panel active" id="panel-overview">
+    <div class="sum-row" id="sum-row"></div>
+    <div class="sec-hd"><div class="sec-title">進行中案場</div></div>
+    <div class="proj-grid" id="overview-cards"></div>
+  </div>
+  <div class="panel" id="panel-projects">
+    <div class="sec-hd">
+      <div class="sec-title">所有案場</div>
+      <div class="tog-grp" id="proj-filter">
+        <button class="tog-btn active" onclick="filterProj('all',this)">全部</button>
+        <button class="tog-btn" onclick="filterProj('施工中',this)">施工中</button>
+        <button class="tog-btn" onclick="filterProj('待開工',this)">待開工</button>
+        <button class="tog-btn" onclick="filterProj('已完工',this)">已完工</button>
+      </div>
+    </div>
+    <div class="proj-grid" id="all-cards"></div>
+  </div>
+  <div class="panel" id="panel-schedule">
+    <div class="sec-hd"><div class="sec-title">工期甘特圖</div><div style="font-size:12px;color:var(--muted)" id="gantt-month"></div></div>
+    <div class="sec-card gantt-wrap" id="gantt-ct"></div>
+    <div class="sec-hd" style="margin-top:16px"><div class="sec-title">各案排班明細</div></div>
+    <div id="schedule-detail"></div>
+  </div>
+  <div class="panel" id="panel-materials">
+    <div class="sec-hd">
+      <div class="sec-title">備料清單</div>
+      <button class="btn btn-ghost btn-sm" onclick="openMaterialMgr()">管理品項庫</button>
+    </div>
+    <div class="sec-card" style="padding:0;overflow:hidden" id="mat-ct"></div>
+  </div>
+  <div class="panel" id="panel-cost">
+    <div class="sec-hd"><div class="sec-title">費用試算</div></div>
+    <div id="cost-ct"></div>
+  </div>
+  <div class="panel" id="panel-alerts">
+    <div class="sec-hd"><div class="sec-title">提醒事項</div><span id="alert-summary" style="font-size:12px;color:var(--muted)"></span></div>
+    <div id="alerts-ct"></div>
+  </div>
+</main>
+
+<!-- PROJECT DETAIL MODAL -->
+<div class="overlay" id="proj-modal" onclick="overlayClose(event,'proj-modal')">
+  <div class="modal" style="max-width:900px">
+    <div class="mhdr">
+      <div>
+        <div class="mtitle" id="pm-title">案場名稱</div>
+        <div style="font-size:12px;opacity:.7;margin-top:2px" id="pm-sub">工期</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="btn btn-sm" style="background:rgba(255,255,255,.2);color:#fff;border:none" onclick="saveProject()">💾 儲存</button>
+        <button class="btn btn-sm" style="background:rgba(180,40,20,.4);color:#fff;border:none" onclick="deleteProject()">🗑 刪除</button>
+        <button class="btn btn-sm" style="background:rgba(180,40,20,.4);color:#fff;border:none" onclick="deleteProject()">🗑 刪除</button>
+        <button class="mclose" onclick="closeOverlay('proj-modal')">✕</button>
+      </div>
+    </div>
+    <div style="border-bottom:1px solid var(--stone)">
+      <div class="mtabs" style="padding:0 22px;margin-bottom:0">
+        <div class="mtab active" onclick="showMTab('basic',this)">基本資訊</div>
+        <div class="mtab" onclick="showMTab('client',this)">業主資訊</div>
+        <div class="mtab" onclick="showMTab('areas',this)">施作區域</div>
+        <div class="mtab" onclick="showMTab('workers-tab',this)">人員排班</div>
+        <div class="mtab" onclick="showMTab('mats',this)">備料清單</div>
+        <div class="mtab" onclick="showMTab('payments',this)">請款追蹤</div>
+        <div class="mtab" onclick="showMTab('refimgs',this)">圖面參考</div>
+        <div class="mtab" onclick="showMTab('samples',this)">打板紀錄</div>
+        <div class="mtab" onclick="showMTab('report',this)">工程日報</div>
+        <div class="mtab" onclick="showMTab('expenses',this)">開支明細</div>
+      </div>
+    </div>
+    <div class="mbody" id="pm-body"></div>
+  </div>
+</div>
+
+<!-- NEW PROJECT MODAL -->
+<div class="overlay" id="new-modal" onclick="overlayClose(event,'new-modal')">
+  <div class="modal" style="max-width:640px">
+    <div class="mhdr">
+      <div class="mtitle">新增案場</div>
+      <button class="mclose" onclick="closeOverlay('new-modal')">✕</button>
+    </div>
+    <div class="mbody">
+      <div class="fg-row fg-2">
+        <div class="fg"><label class="fl">案場名稱 *</label><input class="fi" id="np-name" placeholder="例：望新桃園"></div>
+        <div class="fg"><label class="fl">狀態</label>
+          <select class="fs" id="np-status">
+            <option>待開工</option><option>施工中</option><option>已完工</option><option>暫停</option>
+          </select>
+        </div>
+      </div>
+      <div class="fg"><label class="fl">地址</label><input class="fi" id="np-addr" placeholder="完整施工地址"></div>
+      <div class="fg-row fg-2">
+        <div class="fg"><label class="fl">開工日期</label><input class="fi" type="date" id="np-start"></div>
+        <div class="fg"><label class="fl">預計完工</label><input class="fi" type="date" id="np-end"></div>
+      </div>
+      <div class="fg-row fg-2">
+        <div class="fg"><label class="fl">車位</label>
+          <select class="fs" id="np-parking">
+            <option>有車位</option><option>無車位（需自費停車）</option><option>待確認</option>
+          </select>
+        </div>
+        <div class="fg"><label class="fl">餐費補助（元/工）</label><input class="fi" type="number" id="np-meal" value="200"></div>
+      </div>
+      <div class="fg-row fg-2">
+        <div class="fg"><label class="fl">施工時間限制</label><input class="fi" id="np-hours" placeholder="08:00–17:00 平日"></div>
+        <div class="fg"><label class="fl">油資（元）</label><input class="fi" type="number" id="np-fuel" value="0"></div>
+      </div>
+      <div class="fg"><label class="fl">備注</label><textarea class="fta" id="np-note" placeholder="住宿安排、特殊說明…"></textarea></div>
+      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:14px">
+        <button class="btn btn-ghost" onclick="closeOverlay('new-modal')">取消</button>
+        <button class="btn btn-primary" onclick="createProject()">建立案場</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- WORKER DB MODAL -->
+<div class="overlay" id="worker-modal" onclick="overlayClose(event,'worker-modal')">
+  <div class="modal" style="max-width:800px">
+    <div class="mhdr">
+      <div class="mtitle">👷 師傅資料庫</div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="btn btn-sm" style="background:rgba(255,255,255,.2);color:#fff;border:none" onclick="openAddWorker()">＋ 新增師傅</button>
+        <button class="mclose" onclick="closeOverlay('worker-modal')">✕</button>
+      </div>
+    </div>
+    <div class="mbody">
+      <div class="worker-grid" id="worker-cards"></div>
+    </div>
+  </div>
+</div>
+
+<!-- WORKER EDIT MODAL -->
+<div class="overlay" id="worker-edit-modal" onclick="overlayClose(event,'worker-edit-modal')">
+  <div class="modal" style="max-width:560px">
+    <div class="mhdr">
+      <div class="mtitle" id="we-title">新增師傅</div>
+      <button class="mclose" onclick="closeOverlay('worker-edit-modal')">✕</button>
+    </div>
+    <div class="mbody" id="we-body"></div>
+  </div>
+</div>
+
+<!-- MATERIAL MGR MODAL -->
+<div class="overlay" id="mat-modal" onclick="overlayClose(event,'mat-modal')">
+  <div class="modal" style="max-width:700px">
+    <div class="mhdr">
+      <div class="mtitle">備品庫管理</div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-sm" style="background:rgba(255,255,255,.2);color:#fff;border:none" onclick="addMatItem()">＋ 新增品項</button>
+        <button class="mclose" onclick="closeOverlay('mat-modal')">✕</button>
+      </div>
+    </div>
+    <div class="mbody" id="mat-mgr-body"></div>
+  </div>
+</div>
+
+<!-- IMAGE LIGHTBOX -->
+<div class="overlay" id="lightbox" onclick="closeOverlay('lightbox')" style="align-items:center;background:rgba(0,0,0,.85)">
+  <img id="lb-img" style="max-width:90%;max-height:85vh;border-radius:8px;object-fit:contain">
+</div>
+
+<script>
+
+// ══════════════════════════════════════════
+// SUPABASE
+// ══════════════════════════════════════════
+const SUPA_URL='https://wourbhpmcuokcwvngfel.supabase.co';
+const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndvdXJiaHBtY3Vva2N3dm5nZmVsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyMzA5MzIsImV4cCI6MjA5NjgwNjkzMn0.kYQ6Bh-8SmeAbxTNFzDGtCkIaePLnOBqUHzrg-lO_Nw';
+
+async function supa(method,table,body=null,params=''){
+  const url=`${SUPA_URL}/rest/v1/${table}${params}`;
+  const headers={'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':method==='POST'?'return=representation':''};
+  try{
+    const res=await fetch(url,{method,headers,body:body?JSON.stringify(body):null});
+    if(!res.ok){console.warn('supa err',method,table,res.status);return [];}
+    const t=await res.text();return t?JSON.parse(t):[];
+  }catch(e){console.warn('supa fetch err',e);return [];}
+}
+const api={
+  get:(t,p='')=>supa('GET',t,null,p),
+  post:(t,b)=>supa('POST',t,b),
+  patch:(t,b,p)=>supa('PATCH',t,b,p),
+  del:(t,p)=>supa('DELETE',t,null,p),
+};
+
+function showBanner(msg){let el=document.getElementById('load-banner');if(!el){el=document.createElement('div');el.id='load-banner';el.style.cssText='position:fixed;top:0;left:0;right:0;background:var(--bronze);color:#fff;text-align:center;padding:8px;font-size:13px;font-weight:600;z-index:9999';document.body.prepend(el);}el.textContent=msg;}
+function hideBanner(){const el=document.getElementById('load-banner');if(el)el.remove();}
+
+async function loadAll(){
+  showBanner('載入資料中...');
+  try{
+    const [ws,ml,ps,cs,pays,schs,mats,areas,aphots,refs,samps,sphots,rpts,rphots,exps]=await Promise.all([
+      api.get('workers','?order=created_at'),
+      api.get('mat_library','?order=created_at'),
+      api.get('projects','?order=created_at'),
+      api.get('clients','?select=*'),
+      api.get('payments','?order=date'),
+      api.get('schedule','?order=date'),
+      api.get('materials','?order=sort_order'),
+      api.get('areas','?order=sort_order'),
+      api.get('area_photos','?order=sort_order'),
+      api.get('ref_images','?order=sort_order'),
+      api.get('samples','?order=sort_order'),
+      api.get('sample_photos','?order=sort_order'),
+      api.get('reports','?order=sort_order'),
+      api.get('report_photos','?order=sort_order'),
+      api.get('expenses','?order=date'),
+    ]);
+
+    DB.workers=(ws||[]).map(w=>({id:w.id,name:w.name,phone:w.phone||'',age:w.age||0,years:w.years||0,defaultRate:w.default_rate||1600,specialty:w.specialty||'',note:w.note||''}));
+    DB.matLib=(ml||[]).map(m=>({id:m.id,name:m.name,defaultUnit:m.default_unit||'個',defaultQty:m.default_qty||1,price:m.price||0,isOwned:m.is_owned||false}));
+
+    DB.projects=(ps||[]).map(p=>{
+      const c=(cs||[]).find(x=>x.project_id===p.id)||{};
+      const acc=p.accommodation||{address:'',cost:0,days:0};
+      return {
+        id:p.id,name:p.name,status:p.status||'待開工',
+        address:p.address||'',parking:p.parking||'待確認',
+        workHours:p.work_hours||'',
+        startDate:p.start_date||'',endDate:p.end_date||'',
+        mealAllowance:p.meal_allowance||200,fuelCost:p.fuel_cost||0,
+        progress:p.progress||0,areaValue:p.area_value||0,areaUnit:p.area_unit||'坪',
+        accessInfo:p.access_info||'',
+        accommodation:{address:acc.address||'',cost:acc.cost||0,days:acc.days||0},
+        note:p.note||'',
+        client:{dbId:c.id,name:c.name||'',contact:c.contact||'',phone:c.phone||'',email:c.email||'',
+          isDesignCo:c.is_design_co||false,contractAmt:c.contract_amt||0,note:c.note||'',
+          hasInvoice:c.has_invoice||false,invoiceTitle:c.invoice_title||'',
+          invoiceTaxId:c.invoice_tax_id||'',invoiceAddr:c.invoice_addr||'',contracts:c.contracts||[]},
+        payments:(pays||[]).filter(x=>x.project_id===p.id).map(x=>{return {id:x.id,date:x.date||'',amount:x.amount||0,note:x.note||'',received:x.received||false}}),
+        schedule:(schs||[]).filter(x=>x.project_id===p.id).map(x=>{return {id:x.id,workerName:x.worker_name||'',date:x.date||'',days:x.days||1,dailyRate:x.daily_rate||1600,tasks:x.tasks||''}}),
+        materials:(mats||[]).filter(x=>x.project_id===p.id).map(x=>{return {id:x.id,name:x.name||'',code:x.code||'',unit:x.unit||'個',qty:x.qty||1,price:x.price||0,isOwned:x.is_owned||false,status:x.status||'ok',note:x.note||''}}),
+        areas:(areas||[]).filter(x=>x.project_id===p.id).map(a=>{
+          const photos=(aphots||[]).filter(ph=>ph.area_id===a.id).map(ph=>ph.data);
+          return {id:a.id,name:a.name||'',width:a.width,height:a.height,directArea:a.direct_area,directUnit:a.direct_unit||'坪',note:a.note||'',photos};
+        }),
+        refImgs:(refs||[]).filter(x=>x.project_id===p.id).map(x=>x.data),
+        samples:(samps||[]).filter(x=>x.project_id===p.id).map(s=>{
+          const photos=(sphots||[]).filter(ph=>ph.sample_id===s.id).map(ph=>ph.data);
+          return {id:s.id,title:s.title||'',date:s.date||'',ratio:s.ratio||'',status:s.status||'pending',confirmedNote:s.confirmed_note||'',photos};
+        }),
+        report:(rpts||[]).filter(x=>x.project_id===p.id).map(r=>{
+          const photos=(rphots||[]).filter(ph=>ph.report_id===r.id).map(ph=>ph.data);
+          return {id:r.id,date:r.date||'',weather:r.weather||'☀️ 晴天',workersCount:r.workers_count||0,caption:r.caption||'',photos,photoCaptions:r.photo_captions||[]};
+        }),
+        expenses:(exps||[]).filter(x=>x.project_id===p.id).map(x=>{return {id:x.id,date:x.date||'',item:x.item||'',amount:x.amount||0,note:x.note||'',reimbursed:x.reimbursed||false}}),
+        alerts:[],
+      };
+    });
+
+    DB.projects.forEach(p=>{
+      p.alerts=[
+        ...p.materials.filter(m=>m.status==='out').map(m=>m.name+'需補貨'),
+        ...p.materials.filter(m=>m.status==='low').map(m=>m.name+'庫存低'),
+        ...(p.schedule.length===0&&p.status==='待開工'?['人力尚未確認']:[]),
+        ...(p.parking==='待確認'?['停車位待確認']:[]),
+      ];
+    });
+  }catch(e){console.error('loadAll error',e);}
+  hideBanner();
+  renderOverview();renderAllCards();
+}
+
+// ── SAVE HELPERS ──────────────────────────
+async function dbSaveProject(p){
+  const isNew=typeof p.id==='number';
+  const row={name:p.name,status:p.status,address:p.address,parking:p.parking,work_hours:p.workHours,start_date:p.startDate||null,end_date:p.endDate||null,meal_allowance:p.mealAllowance,fuel_cost:p.fuelCost,progress:p.progress,area_value:p.areaValue,area_unit:p.areaUnit,access_info:p.accessInfo||'',accommodation:p.accommodation,note:p.note};
+  let pid=p.id;
+  if(isNew){const r=await api.post('projects',row);if(r&&r[0]){pid=r[0].id;p.id=pid;}else return false;}
+  else await api.patch('projects',row,`?id=eq.${pid}`);
+  const crow={project_id:pid,name:p.client.name,contact:p.client.contact,phone:p.client.phone,email:p.client.email||'',is_design_co:p.client.isDesignCo,contract_amt:p.client.contractAmt,note:p.client.note||'',has_invoice:p.client.hasInvoice||false,invoice_title:p.client.invoiceTitle||'',invoice_tax_id:p.client.invoiceTaxId||'',invoice_addr:p.client.invoiceAddr||'',contracts:p.client.contracts||[]};
+  if(p.client.dbId)await api.patch('clients',crow,`?id=eq.${p.client.dbId}`);
+  else{const cr=await api.post('clients',crow);if(cr&&cr[0])p.client.dbId=cr[0].id;}
+  return pid;
+}
+async function dbSaveAll(p){
+  await api.del('payments',`?project_id=eq.${p.id}`);
+  for(const x of p.payments){const r=await api.post('payments',{project_id:p.id,date:x.date,amount:x.amount,note:x.note||'',received:x.received});if(r&&r[0])x.id=r[0].id;}
+  await api.del('schedule',`?project_id=eq.${p.id}`);
+  for(const x of p.schedule){const r=await api.post('schedule',{project_id:p.id,worker_name:x.workerName,date:x.date,days:x.days,daily_rate:x.dailyRate,tasks:x.tasks||''});if(r&&r[0])x.id=r[0].id;}
+  await api.del('materials',`?project_id=eq.${p.id}`);
+  for(let i=0;i<p.materials.length;i++){const m=p.materials[i];const r=await api.post('materials',{project_id:p.id,name:m.name,code:m.code||'',unit:m.unit,qty:m.qty,price:m.price||0,is_owned:m.isOwned,status:m.status,note:m.note||'',sort_order:i});if(r&&r[0])m.id=r[0].id;}
+  // areas
+  const exA=await api.get('areas',`?project_id=eq.${p.id}&select=id`);
+  for(const a of (exA||[]))await api.del('area_photos',`?area_id=eq.${a.id}`);
+  await api.del('areas',`?project_id=eq.${p.id}`);
+  for(let i=0;i<p.areas.length;i++){const a=p.areas[i];const r=await api.post('areas',{project_id:p.id,name:a.name,width:a.width,height:a.height,direct_area:a.directArea,direct_unit:a.directUnit||'坪',note:a.note||'',sort_order:i});if(r&&r[0]){a.id=r[0].id;for(let j=0;j<a.photos.length;j++)await api.post('area_photos',{area_id:a.id,data:a.photos[j],sort_order:j});}}
+  // ref images
+  await api.del('ref_images',`?project_id=eq.${p.id}`);
+  for(let i=0;i<p.refImgs.length;i++)await api.post('ref_images',{project_id:p.id,data:p.refImgs[i],sort_order:i});
+  // samples
+  const exS=await api.get('samples',`?project_id=eq.${p.id}&select=id`);
+  for(const s of (exS||[]))await api.del('sample_photos',`?sample_id=eq.${s.id}`);
+  await api.del('samples',`?project_id=eq.${p.id}`);
+  for(let i=0;i<p.samples.length;i++){const s=p.samples[i];const r=await api.post('samples',{project_id:p.id,title:s.title,date:s.date,ratio:s.ratio||'',status:s.status,confirmed_note:s.confirmedNote||'',sort_order:i});if(r&&r[0]){s.id=r[0].id;for(let j=0;j<s.photos.length;j++)await api.post('sample_photos',{sample_id:s.id,data:s.photos[j],sort_order:j});}}
+  // reports
+  const exR=await api.get('reports',`?project_id=eq.${p.id}&select=id`);
+  for(const r of (exR||[]))await api.del('report_photos',`?report_id=eq.${r.id}`);
+  await api.del('reports',`?project_id=eq.${p.id}`);
+  for(let i=0;i<p.report.length;i++){const r=p.report[i];const rr=await api.post('reports',{project_id:p.id,date:r.date||null,weather:r.weather||'☀️ 晴天',workers_count:r.workersCount||0,caption:r.caption||'',photo_captions:r.photoCaptions||[],sort_order:i});if(rr&&rr[0]){r.id=rr[0].id;for(let j=0;j<r.photos.length;j++)await api.post('report_photos',{report_id:r.id,data:r.photos[j],sort_order:j});}}
+  // expenses
+  await api.del('expenses',`?project_id=eq.${p.id}`);
+  for(const x of p.expenses){const r=await api.post('expenses',{project_id:p.id,date:x.date,item:x.item||'',amount:x.amount||0,note:x.note||'',reimbursed:x.reimbursed});if(r&&r[0])x.id=r[0].id;}
+}
+async function dbDelProject(id){
+  await api.del('clients',`?project_id=eq.${id}`);
+  await api.del('projects',`?id=eq.${id}`);
+}
+async function dbSaveWorkers(){
+  for(const w of DB.workers){
+    const row={name:w.name,phone:w.phone||'',age:w.age||0,years:w.years||0,default_rate:w.defaultRate||1600,specialty:w.specialty||'',note:w.note||''};
+    if(typeof w.id==='number'){const r=await api.post('workers',row);if(r&&r[0])w.id=r[0].id;}
+    else await api.patch('workers',row,`?id=eq.${w.id}`);
+  }
+}
+async function dbDelWorker(id){if(typeof id!=='number')await api.del('workers',`?id=eq.${id}`);}
+
+// ═══════════════════════════════════════════════
+// DATA STORE
+// ═══════════════════════════════════════════════
+const DB = {
+  projects: [],
+  workers: [],
+  matLibrary: [],
+  nextId: 1,
+  nextWId: 1,
+  nextMId: 1,
+};
+
+// ─── SEED DATA ───────────────────────────────
+function seedData() {
+  DB.workers = [
+    { id:1, name:'浩', phone:'0912-345-678', age:38, years:12, defaultRate:1800, specialty:'批土、麂皮飾', note:'南部師傅，需安排住宿' },
+    { id:2, name:'許', phone:'0923-456-789', age:35, years:8, defaultRate:1600, specialty:'油漆、批土', note:'' },
+    { id:3, name:'庭', phone:'0934-567-890', age:30, years:5, defaultRate:1600, specialty:'保護、雜工', note:'可開貨車' },
+    { id:4, name:'鋼', phone:'0945-678-901', age:45, years:20, defaultRate:3000, specialty:'大理石、特殊塗料', note:'師傅級，排班需提前兩週' },
+  ];
+  DB.nextWId = 5;
+
+  DB.matLibrary = [
+    { id:1, name:'青狀灰泥', defaultUnit:'桶', defaultQty:1, price:1200, isOwned:false, code:'C07' },
+    { id:2, name:'麂皮飾', defaultUnit:'桶', defaultQty:1, price:2800, isOwned:false, code:'A09' },
+    { id:3, name:'藍線膠', defaultUnit:'支', defaultQty:4, price:80, isOwned:true },
+    { id:4, name:'瀝輪筆', defaultUnit:'支', defaultQty:4, price:120, isOwned:true },
+    { id:5, name:'水封', defaultUnit:'桶', defaultQty:1, price:650, isOwned:false },
+    { id:6, name:'高遮', defaultUnit:'桶', defaultQty:1, price:480, isOwned:false },
+    { id:7, name:'砂磨', defaultUnit:'桶', defaultQty:1, price:350, isOwned:false },
+    { id:8, name:'牛皮', defaultUnit:'呎', defaultQty:5, price:90, isOwned:true },
+    { id:9, name:'梯子', defaultUnit:'支', defaultQty:4, price:0, isOwned:true },
+    { id:10, name:'抹刀/鏝刀', defaultUnit:'組', defaultQty:1, price:0, isOwned:true },
+    { id:11, name:'推車', defaultUnit:'台', defaultQty:2, price:0, isOwned:true },
+    { id:12, name:'滾盤', defaultUnit:'個', defaultQty:1, price:0, isOwned:true },
+    { id:13, name:'坑坡袋', defaultUnit:'個', defaultQty:2, price:15, isOwned:false },
+    { id:14, name:'攪拌機', defaultUnit:'台', defaultQty:1, price:0, isOwned:true },
+    { id:15, name:'底漆', defaultUnit:'桶', defaultQty:2, price:780, isOwned:false },
+    { id:16, name:'批土', defaultUnit:'桶', defaultQty:3, price:420, isOwned:false },
+  ];
+  DB.nextMId = 17;
+
+  const p1 = {
+    id: DB.nextId++,
+    name:'望新桃園', status:'施工中',
+    address:'桃園市桃園區望新路 XX 號', parking:'無車位（需自費停車）',
+    workHours:'平日 08:00–17:00，假日不可',
+    startDate:'2025-06-15', endDate:'2025-06-24',
+    mealAllowance:200, fuelCost:3000, progress:60,
+    areaValue:45, areaUnit:'坪',
+    client:{ name:'王設計事務所', contact:'王小姐', phone:'02-1234-5678', email:'wang@design.tw', isDesignCo:true, contractAmt:280000, note:'業主要求完工後拍照紀錄' },
+    payments:[
+      { id:1, date:'2025-06-10', amount:100000, note:'開工款', received:true },
+    ],
+    areas:[
+      { id:1, name:'客廳主牆', width:4.5, height:2.8, photos:[], note:'麂皮飾 A09' },
+      { id:2, name:'玄關', width:1.2, height:2.8, photos:[], note:'青狀灰泥' },
+    ],
+    schedule:[
+      { id:1, workerId:1, workerName:'浩', week:'Week 1', days:5, dailyRate:1800, tasks:'保護、灰漆' },
+      { id:2, workerId:2, workerName:'許', week:'Week 1', days:5, dailyRate:1600, tasks:'保護、灰漆' },
+      { id:3, workerId:3, workerName:'庭', week:'Week 1', days:5, dailyRate:1600, tasks:'保護' },
+      { id:4, workerId:1, workerName:'浩', week:'Week 2', days:5, dailyRate:1800, tasks:'麂皮面1' },
+      { id:5, workerId:2, workerName:'許', week:'Week 2', days:5, dailyRate:1600, tasks:'麂皮面1' },
+      { id:6, workerId:1, workerName:'浩', week:'Week 3', days:5, dailyRate:1800, tasks:'雨光×2' },
+      { id:7, workerId:2, workerName:'許', week:'Week 3', days:5, dailyRate:1600, tasks:'麂皮面2' },
+      { id:8, workerId:4, workerName:'鋼', week:'Week 3', days:5, dailyRate:3000, tasks:'膏中1' },
+      { id:9, workerId:1, workerName:'浩', week:'Week 4', days:5, dailyRate:1800, tasks:'雨光×2' },
+      { id:10, workerId:2, workerName:'許', week:'Week 4', days:3, dailyRate:1600, tasks:'收尾' },
+    ],
+    materials:[
+      { id:1, libId:1, name:'青狀灰泥', code:'C07/B07', unit:'桶', qty:2, price:1200, isOwned:false, status:'ok', note:'' },
+      { id:2, libId:2, name:'麂皮飾', code:'A09 500g/0.1ml', unit:'桶', qty:4, price:2800, isOwned:false, status:'low', note:'剩餘2桶' },
+      { id:3, libId:3, name:'藍線膠', unit:'支', qty:4, price:80, isOwned:true, status:'ok', note:'' },
+      { id:4, libId:5, name:'水封', unit:'桶', qty:1, price:650, isOwned:false, status:'out', note:'需採購' },
+      { id:5, libId:8, name:'牛皮', unit:'呎', qty:5, price:90, isOwned:true, status:'out', note:'需採購' },
+      { id:6, libId:9, name:'梯子', unit:'支', qty:4, price:0, isOwned:true, status:'ok', note:'' },
+    ],
+    alerts:['麂皮飾庫存低','水封需補貨','牛皮需補貨'],
+    note:'需安排南部師傅北上，住桃園，油資 NT$3,000',
+  };
+
+  const p2 = {
+    id: DB.nextId++,
+    name:'信義台北', status:'施工中',
+    address:'台北市信義區忠孝東路 XX 號', parking:'有車位（B2）',
+    workHours:'平日 09:00–18:00',
+    startDate:'2025-06-18', endDate:'2025-06-30',
+    mealAllowance:200, fuelCost:0, progress:30,
+    areaValue:28, areaUnit:'坪',
+    client:{ name:'陳先生', contact:'陳先生', phone:'0912-111-222', email:'', isDesignCo:false, contractAmt:150000, note:'' },
+    payments:[],
+    areas:[
+      { id:1, name:'主臥室', width:3.6, height:2.8, photos:[], note:'面漆白色' },
+    ],
+    schedule:[
+      { id:1, workerId:1, workerName:'浩', week:'Week 1', days:5, dailyRate:1800, tasks:'保護、底漆' },
+      { id:2, workerId:2, workerName:'許', week:'Week 1', days:5, dailyRate:1600, tasks:'批土' },
+      { id:3, workerId:1, workerName:'浩', week:'Week 2', days:5, dailyRate:1800, tasks:'面漆' },
+      { id:4, workerId:2, workerName:'許', week:'Week 2', days:3, dailyRate:1600, tasks:'收尾' },
+    ],
+    materials:[
+      { id:1, libId:15, name:'底漆', unit:'桶', qty:2, price:780, isOwned:false, status:'ok', note:'' },
+      { id:2, libId:16, name:'批土', unit:'桶', qty:3, price:420, isOwned:false, status:'low', note:'' },
+    ],
+    alerts:['批土庫存低'],
+    note:'',
+  };
+
+  const p3 = {
+    id: DB.nextId++,
+    name:'大安新案', status:'待開工',
+    address:'台北市大安區復興南路 XX 號', parking:'待確認',
+    workHours:'待確認',
+    startDate:'2025-07-05', endDate:'2025-07-20',
+    mealAllowance:200, fuelCost:0, progress:0,
+    areaValue:38, areaUnit:'坪',
+    client:{ name:'林設計', contact:'林小姐', phone:'02-9876-5432', email:'lin@design.com', isDesignCo:true, contractAmt:320000, note:'' },
+    payments:[],
+    areas:[],
+    schedule:[],
+    materials:[],
+    alerts:['人力尚未確認','停車位待詢問'],
+    note:'業主要求7月初進場，需提前確認師傅排班',
+  };
+
+  DB.projects = [p1, p2, p3];
+}
+
+// ═══════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════
+let currentProjId = null;
+let currentMTab = 'basic';
+
+function uid() { return Date.now() + Math.random().toString(36).slice(2,7); }
+function fmtDate(d) { return d ? d.replace(/-/g,'/') : '—'; }
+function fmtMoney(n) { return 'NT$ ' + (n||0).toLocaleString(); }
+function statusColor(s) { return {施工中:'#5A7A5A',待開工:'#A07828',已完工:'#888',暫停:'#8A3A2A'}[s]||'#888'; }
+
+function overlayClose(e, id) {
+  if (e.target === document.getElementById(id)) closeOverlay(id);
+}
+function closeOverlay(id) { document.getElementById(id).classList.remove('open'); }
+function openOverlay(id) { document.getElementById(id).classList.add('open'); }
+
+function showTab(tab) {
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===tab));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('active',p.id===`panel-${tab}`));
+  if(tab==='schedule') renderSchedule();
+  if(tab==='materials') renderMaterials();
+  if(tab==='cost') renderCost();
+  if(tab==='alerts') renderAlerts();
+}
+
+function filterProj(status, btn) {
+  btn.closest('.tog-grp').querySelectorAll('.tog-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderAllCards(status);
+}
+
+// ═══════════════════════════════════════════════
+// RENDER OVERVIEW & LISTS
+// ═══════════════════════════════════════════════
+function renderSummary() {
+  const active = DB.projects.filter(p=>p.status==='施工中').length;
+  const pending = DB.projects.filter(p=>p.status==='待開工').length;
+  const needBuy = DB.projects.reduce((a,p)=>a+p.materials.filter(m=>m.status==='out').length,0);
+  const totalAlerts = DB.projects.reduce((a,p)=>a+p.alerts.length,0);
+  document.getElementById('sum-row').innerHTML = `
+    <div class="sum-card ok"><div class="sum-label">施工中</div><div class="sum-value">${active}</div><div class="sum-detail">共 ${DB.projects.length} 個案場</div></div>
+    <div class="sum-card warn"><div class="sum-label">待開工</div><div class="sum-value">${pending}</div></div>
+    <div class="sum-card danger"><div class="sum-label">待補貨</div><div class="sum-value">${needBuy}</div><div class="sum-detail">點擊備料清單查看</div></div>
+    <div class="sum-card"><div class="sum-label">待處理提醒</div><div class="sum-value">${totalAlerts}</div></div>`;
+  document.getElementById('alert-count').textContent = totalAlerts;
+}
+
+function projCardHTML(p) {
+  const atags = p.alerts.slice(0,3).map(a=>`<span class="atag ${a.includes('補貨')||a.includes('採購')?'danger':'warn'}">${a}</span>`).join('');
+  const contractPct = p.client.contractAmt ? Math.round((p.payments.filter(x=>x.received).reduce((a,b)=>a+b.amount,0)/p.client.contractAmt)*100) : 0;
+  return `
+  <div class="proj-card" data-pid="${p.id}" onclick="openProject(this.dataset.pid)">
+    <div class="pc-header">
+      <div>
+        <div class="pc-name">${p.name}</div>
+        <div class="pc-addr">📍 ${p.address}</div>
+      </div>
+      <span class="sbadge s${p.status}">${p.status}</span>
+    </div>
+    <div class="pc-body">
+      <div class="pc-meta">
+        <div class="mi"><span class="ml">工期：</span><span class="mv">${fmtDate(p.startDate)} → ${fmtDate(p.endDate)}</span></div>
+        <div class="mi"><span class="ml">面積：</span><span class="mv">${p.areaValue} ${p.areaUnit}</span></div>
+        <div class="mi"><span class="ml">車位：</span><span class="mv">${p.parking}</span></div>
+        <div class="mi"><span class="ml">業主：</span><span class="mv">${p.client.contact||p.client.name}</span></div>
+      </div>
+      ${atags ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px">${atags}</div>` : ''}
+      <div class="pbar"><div class="pfill" style="width:${p.progress}%"></div></div>
+      <div style="font-size:11px;color:var(--muted);margin-top:3px">施工進度 ${p.progress}%　請款 ${contractPct}%（${fmtMoney(p.payments.filter(x=>x.received).reduce((a,b)=>a+b.amount,0))} / ${fmtMoney(p.client.contractAmt)}）</div>
+    </div>
+    <div class="pc-footer">
+      <span>餐費 NT$${p.mealAllowance}/工</span>
+      <span>油資 NT$${p.fuelCost.toLocaleString()}</span>
+      <span>${p.schedule.length} 筆排班</span>
+    </div>
+  </div>`;
+}
+
+function renderOverview() {
+  renderSummary();
+  document.getElementById('overview-cards').innerHTML =
+    DB.projects.filter(p=>p.status==='施工中').map(projCardHTML).join('');
+}
+
+function renderAllCards(filter='all') {
+  const list = filter==='all' ? DB.projects : DB.projects.filter(p=>p.status===filter);
+  document.getElementById('all-cards').innerHTML = list.map(projCardHTML).join('');
+}
+
+// ═══════════════════════════════════════════════
+// PROJECT DETAIL
+// ═══════════════════════════════════════════════
+function openProject(id) {
+  currentProjId = id;
+  const p = DB.projects.find(x=>String(x.id)===String(id));
+  if(!p) return;
+  document.getElementById('pm-title').textContent = p.name;
+  document.getElementById('pm-sub').textContent = `${fmtDate(p.startDate)} → ${fmtDate(p.endDate)}`;
+  // reset to first tab
+  document.querySelectorAll('.mtab').forEach((t,i)=>t.classList.toggle('active',i===0));
+  currentMTab = 'basic';
+  renderMTab('basic');
+  openOverlay('proj-modal');
+}
+
+function showMTab(tab, el) {
+  if(el) {
+    el.closest('.mtabs').querySelectorAll('.mtab').forEach(t=>t.classList.remove('active'));
+    el.classList.add('active');
+  }
+  currentMTab = tab;
+  renderMTab(tab);
+}
+
+function renderMTab(tab) {
+  const p = DB.projects.find(x=>x.id===currentProjId);
+  if(!p) return;
+  const body = document.getElementById('pm-body');
+  if(tab==='basic') body.innerHTML = renderBasicTab(p);
+  else if(tab==='client') body.innerHTML = renderClientTab(p);
+  else if(tab==='areas') body.innerHTML = renderAreasTab(p);
+  else if(tab==='workers-tab') body.innerHTML = renderWorkersTab(p);
+  else if(tab==='mats') body.innerHTML = renderMatsTab(p);
+  else if(tab==='payments') body.innerHTML = renderPaymentsTab(p);
+}
+
+// ─── BASIC TAB ───────────────────────────────
+function renderBasicTab(p) {
+  return `
+  <div class="sec-card">
+    <div class="sec-card-title">案場資訊</div>
+    <div class="fg-row fg-2">
+      <div class="fg"><label class="fl">案場名稱</label><input class="fi" id="e-name" value="${p.name}"></div>
+      <div class="fg"><label class="fl">狀態</label>
+        <select class="fs" id="e-status">
+          ${['施工中','待開工','已完工','暫停'].map(s=>`<option ${p.status===s?'selected':''}>${s}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+    <div class="fg"><label class="fl">地址</label><input class="fi" id="e-addr" value="${p.address}"></div>
+    <div class="fg-row fg-2">
+      <div class="fg"><label class="fl">開工日期</label><input class="fi" type="date" id="e-start" value="${p.startDate}"></div>
+      <div class="fg"><label class="fl">完工日期</label><input class="fi" type="date" id="e-end" value="${p.endDate}"></div>
+    </div>
+    <div class="fg-row fg-3">
+      <div class="fg"><label class="fl">車位</label>
+        <select class="fs" id="e-parking">
+          ${['有車位','無車位（需自費停車）','待確認'].map(s=>`<option ${p.parking===s?'selected':''}>${s}</option>`).join('')}
+        </select>
+      </div>
+      <div class="fg"><label class="fl">施工時間限制</label><input class="fi" id="e-hours" value="${p.workHours}"></div>
+      <div class="fg"><label class="fl">油資（元）</label><input class="fi" type="number" id="e-fuel" value="${p.fuelCost}"></div>
+    </div>
+    <div class="fg-row fg-3">
+      <div class="fg"><label class="fl">餐費補助（元/工）</label><input class="fi" type="number" id="e-meal" value="${p.mealAllowance}"></div>
+      <div class="fg">
+        <label class="fl">案場面積</label>
+        <div style="display:flex;gap:6px;align-items:center">
+          <input class="fi" type="number" id="e-area" value="${p.areaValue}" style="flex:1" oninput="syncAreaConvert()">
+          <div class="unit-sw">
+            <button class="unit-opt ${p.areaUnit==='坪'?'active':''}" onclick="setAreaUnit('坪',this)">坪</button>
+            <button class="unit-opt ${p.areaUnit==='㎡'?'active':''}" onclick="setAreaUnit('㎡',this)">㎡</button>
+          </div>
+        </div>
+      </div>
+      <div class="fg"><label class="fl">換算參考</label><input class="fi" id="e-area-conv" readonly value="${areaConvert(p.areaValue,p.areaUnit)}"></div>
+    </div>
+  </div>
+  <div class="sec-card">
+    <div class="sec-card-title">施工進度</div>
+    <div class="prog-wrap">
+      <input type="range" class="prog-slider" min="0" max="100" id="e-prog" value="${p.progress}" oninput="document.getElementById('prog-val').textContent=this.value+'%'">
+      <span id="prog-val" style="font-weight:700;color:var(--bronze);min-width:36px">${p.progress}%</span>
+    </div>
+  </div>
+  <div class="sec-card">
+    <div class="sec-card-title">備注</div>
+    <textarea class="fta" id="e-note">${p.note}</textarea>
+  </div>`;
+}
+
+function areaConvert(val, unit) {
+  if(!val) return '—';
+  if(unit==='坪') return `≈ ${(val*3.305785).toFixed(1)} ㎡`;
+  return `≈ ${(val/3.305785).toFixed(1)} 坪`;
+}
+function syncAreaConvert() {
+  const val = parseFloat(document.getElementById('e-area').value)||0;
+  const p = DB.projects.find(x=>x.id===currentProjId);
+  document.getElementById('e-area-conv').value = areaConvert(val, p.areaUnit);
+}
+function setAreaUnit(unit, btn) {
+  const p = DB.projects.find(x=>x.id===currentProjId);
+  p.areaUnit = unit;
+  btn.closest('.unit-sw').querySelectorAll('.unit-opt').forEach(b=>b.classList.toggle('active',b.textContent===unit));
+  syncAreaConvert();
+}
+
+// ─── CLIENT TAB ─────────────────────────────
+function renderClientTab(p) {
+  const c = p.client;
+  const received = p.payments.filter(x=>x.received).reduce((a,b)=>a+b.amount,0);
+  const remaining = (c.contractAmt||0) - received;
+  return `
+  <div class="sec-card">
+    <div class="sec-card-title">業主資訊</div>
+    <div class="fg-row fg-2">
+      <div class="fg"><label class="fl">業主/公司名稱</label><input class="fi" id="c-name" value="${c.name}"></div>
+      <div class="fg"><label class="fl">類型</label>
+        <select class="fs" id="c-type">
+          <option ${c.isDesignCo?'selected':''} value="1">設計公司</option>
+          <option ${!c.isDesignCo?'selected':''} value="0">個人業主</option>
+        </select>
+      </div>
+    </div>
+    <div class="fg-row fg-3">
+      <div class="fg"><label class="fl">聯絡窗口</label><input class="fi" id="c-contact" value="${c.contact}"></div>
+      <div class="fg"><label class="fl">聯絡電話</label><input class="fi" id="c-phone" value="${c.phone}"></div>
+      <div class="fg"><label class="fl">Email</label><input class="fi" id="c-email" value="${c.email}"></div>
+    </div>
+    <div class="fg"><label class="fl">備注</label><textarea class="fta" id="c-note">${c.note}</textarea></div>
+  </div>
+  <div class="sec-card">
+    <div class="sec-card-title">合約金額</div>
+    <div class="fg-row fg-3">
+      <div class="fg"><label class="fl">合約總金額（含稅）</label><input class="fi" type="number" id="c-contract" value="${c.contractAmt}" oninput="updateContractCalc()"></div>
+      <div class="fg"><label class="fl">已請款</label><input class="fi" id="c-recv" readonly value="${fmtMoney(received)}"></div>
+      <div class="fg"><label class="fl">尚餘</label><input class="fi" id="c-rem" readonly value="${fmtMoney(remaining)}" style="color:${remaining>0?'var(--amber)':'var(--green)'}"></div>
+    </div>
+  </div>`;
+}
+
+function updateContractCalc() {
+  const p = DB.projects.find(x=>x.id===currentProjId);
+  const amt = parseFloat(document.getElementById('c-contract').value)||0;
+  const received = p.payments.filter(x=>x.received).reduce((a,b)=>a+b.amount,0);
+  document.getElementById('c-recv').value = fmtMoney(received);
+  document.getElementById('c-rem').value = fmtMoney(amt - received);
+}
+
+// ─── AREAS TAB ─────────────────────────────
+function renderAreasTab(p) {
+  const areasHtml = p.areas.map(a => `
+    <div class="area-card" id="area-${a.id}">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <input class="fi" value="${a.name}" style="font-weight:700;font-size:14px;flex:1;margin-right:8px" onchange="updateAreaName(${a.id},this.value)">
+        <button class="btn btn-danger btn-xs" onclick="removeArea(${a.id})">刪除</button>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:8px;align-items:center">
+        <input class="fi" type="number" style="width:90px" placeholder="寬(m)" value="${a.width||''}" onchange="updateAreaDim(${a.id},'width',this.value)">
+        <span style="color:var(--muted)">×</span>
+        <input class="fi" type="number" style="width:90px" placeholder="高(m)" value="${a.height||''}" onchange="updateAreaDim(${a.id},'height',this.value)">
+        <span style="font-size:12px;color:var(--muted)">= </span>
+        <span style="font-weight:700;color:var(--bronze);font-size:14px" id="area-calc-${a.id}">${a.width&&a.height ? (a.width*a.height).toFixed(2)+' ㎡' : '—'}</span>
+      </div>
+      <div class="fg"><label class="fl">備注</label><input class="fi" value="${a.note}" placeholder="施作說明…" onchange="updateAreaNote(${a.id},this.value)"></div>
+      <div class="fl" style="margin-top:10px;margin-bottom:6px">施工照片</div>
+      <div class="photo-grid" id="photos-${a.id}">
+        ${a.photos.map((ph,i)=>`<img class="photo-thumb" src="${ph}" onclick="lightbox('${ph}')">`).join('')}
+        <div class="photo-add" onclick="addPhoto(${a.id})" title="新增照片">＋</div>
+      </div>
+    </div>`).join('');
+  return `
+  <div style="margin-bottom:12px;display:flex;justify-content:flex-end">
+    <button class="btn btn-ghost btn-sm" onclick="addArea()">＋ 新增施作區域</button>
+  </div>
+  ${areasHtml || '<div style="text-align:center;padding:40px 0;color:var(--muted)">尚無施作區域，點擊上方新增</div>'}`;
+}
+
+function addArea() {
+  const p = DB.projects.find(x=>x.id===currentProjId);
+  const newArea = { id: Date.now(), name:'新區域', width:null, height:null, photos:[], note:'' };
+  p.areas.push(newArea);
+  renderMTab('areas');
+}
+function removeArea(aId) {
+  const p = DB.projects.find(x=>x.id===currentProjId);
+  p.areas = p.areas.filter(a=>String(a.id)!==String(aId));
+  renderMTab('areas');
+}
+function updateAreaName(aId, val) {
+  const p = DB.projects.find(x=>x.id===currentProjId);
+  const a = p.areas.find(x=>String(x.id)===String(aId));
+  if(a) a.name = val;
+}
+function updateAreaNote(aId, val) {
+  const p = DB.projects.find(x=>x.id===currentProjId);
+  const a = p.areas.find(x=>String(x.id)===String(aId));
+  if(a) a.note = val;
+}
+function updateAreaDim(aId, dim, val) {
+  const p = DB.projects.find(x=>x.id===currentProjId);
+  const a = p.areas.find(x=>String(x.id)===String(aId));
+  if(!a) return;
+  a[dim] = parseFloat(val)||null;
+  const calc = document.getElementById(`area-calc-${aId}`);
+  if(calc) calc.textContent = a.width && a.height ? (a.width*a.height).toFixed(2)+' ㎡' : '—';
+}
+
+function addPhoto(aId) {
+  const input = document.createElement('input');
+  input.type = 'file'; input.accept = 'image/*';
+  input.onchange = async (e) => {
+    const file = e.target.files[0];
+    if(!file) return;
+    const compressed = await compressImage(file, 800, 0.75);
+    const p = DB.projects.find(x=>x.id===currentProjId);
+    const a = p.areas.find(x=>String(x.id)===String(aId));
+    if(a) { a.photos.push(compressed); renderMTab('areas'); }
+  };
+  input.click();
+}
+
+function compressImage(file, maxW, quality) {
+  return new Promise(res => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let w = img.width, h = img.height;
+        if(w > maxW) { h = Math.round(h*maxW/w); w = maxW; }
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img,0,0,w,h);
+        res(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function lightbox(src) {
+  document.getElementById('lb-img').src = src;
+  openOverlay('lightbox');
+}
+
+// ─── WORKERS TAB ─────────────────────────────
+function renderWorkersTab(p) {
+  const rows = p.schedule.map(s => `
+    <tr>
+      <td><select class="fs" style="font-size:12px;padding:4px 8px;width:80px" onchange="updateScheduleField(${s.id},'workerName',this.value);updateScheduleWorkerRate(${s.id},this.value)">
+        ${DB.workers.map(w=>`<option ${w.name===s.workerName?'selected':''}>${w.name}</option>`).join('')}
+        <option ${!DB.workers.find(w=>w.name===s.workerName)?'selected':''} value="${s.workerName}">${DB.workers.find(w=>w.name===s.workerName)?'':s.workerName||'—'}</option>
+      </select></td>
+      <td><input class="fi" style="width:80px;font-size:12px;padding:4px 8px" value="${s.week}" onchange="updateScheduleField(${s.id},'week',this.value)"></td>
+      <td><input class="fi" type="number" style="width:60px;font-size:12px;padding:4px 8px" value="${s.days}" onchange="updateScheduleField(${s.id},'days',+this.value);refreshScheduleCost()"></td>
+      <td><input class="fi" type="number" style="width:80px;font-size:12px;padding:4px 8px" value="${s.dailyRate}" onchange="updateScheduleField(${s.id},'dailyRate',+this.value);refreshScheduleCost()"></td>
+      <td><input class="fi" style="font-size:12px;padding:4px 8px" value="${s.tasks}" onchange="updateScheduleField(${s.id},'tasks',this.value)"></td>
+      <td style="font-weight:600;color:var(--bronze)">NT$ ${(s.days*s.dailyRate).toLocaleString()}</td>
+      <td><button class="btn btn-danger btn-xs" onclick="removeSchedule(${s.id})">✕</button></td>
+    </tr>`).join('');
+
+  const totalLabor = p.schedule.reduce((a,s)=>a+s.days*s.dailyRate,0);
+  const totalDays = p.schedule.reduce((a,s)=>a+s.days,0);
+  const mealCost = totalDays * p.mealAllowance;
+
+  return `
+  <div style="margin-bottom:12px;display:flex;justify-content:space-between;align-items:center">
+    <div class="sec-card-title" style="border:none;padding:0;margin:0">排班記錄</div>
+    <button class="btn btn-ghost btn-sm" onclick="addScheduleRow()">＋ 新增排班</button>
+  </div>
+  <div style="overflow-x:auto;background:var(--white);border-radius:var(--r);box-shadow:var(--shadow);margin-bottom:14px">
+    <table class="tbl">
+      <thead><tr>
+        <th>師傅</th><th>週次</th><th>工天</th><th>日薪</th><th>工項</th><th>小計</th><th></th>
+      </tr></thead>
+      <tbody id="schedule-tbody">${rows}</tbody>
+    </table>
+  </div>
+  <div class="sec-card">
+    <div class="sec-card-title">工資試算</div>
+    <div class="cost-row"><span class="cost-lbl">工資合計</span><span class="cost-val" id="sc-labor">${fmtMoney(totalLabor)}</span></div>
+    <div class="cost-row"><span class="cost-lbl">餐費（${totalDays}工 × NT$${p.mealAllowance}）</span><span class="cost-val" id="sc-meal">${fmtMoney(mealCost)}</span></div>
+    <div class="cost-row"><span class="cost-lbl">油資</span><span class="cost-val">${fmtMoney(p.fuelCost)}</span></div>
+    <div class="cost-total"><span>小計</span><span id="sc-total">${fmtMoney(totalLabor+mealCost+p.fuelCost)}</span></div>
+  </div>`;
+}
+
+function updateScheduleField(sid, field, val) {
+  const p = DB.projects.find(x=>x.id===currentProjId);
+  const s = p.schedule.find(x=>String(x.id)===String(sid));
+  if(s) s[field] = val;
+}
+function updateScheduleWorkerRate(sid, name) {
+  const p = DB.projects.find(x=>x.id===currentProjId);
+  const s = p.schedule.find(x=>String(x.id)===String(sid));
+  const w = DB.workers.find(x=>x.name===name);
+  if(s) { s.workerName = name; if(w) s.dailyRate = w.defaultRate; }
+  renderMTab('workers-tab');
+}
+function removeSchedule(sid) {
+  const p = DB.projects.find(x=>x.id===currentProjId);
+  p.schedule = p.schedule.filter(x=>String(x.id)!==String(sid));
+  renderMTab('workers-tab');
+}
+function addScheduleRow() {
+  const p = DB.projects.find(x=>x.id===currentProjId);
+  const firstW = DB.workers[0]||{name:'師傅',defaultRate:1600};
+  p.schedule.push({ id:Date.now(), workerId:firstW.id, workerName:firstW.name, week:'Week 1', days:5, dailyRate:firstW.defaultRate, tasks:'' });
+  renderMTab('workers-tab');
+}
+function refreshScheduleCost() {
+  const p = DB.projects.find(x=>x.id===currentProjId);
+  const totalLabor = p.schedule.reduce((a,s)=>a+s.days*s.dailyRate,0);
+  const totalDays = p.schedule.reduce((a,s)=>a+s.days,0);
+  const mealCost = totalDays * p.mealAllowance;
+  const el1=document.getElementById('sc-labor'),el2=document.getElementById('sc-meal'),el3=document.getElementById('sc-total');
+  if(el1) el1.textContent=fmtMoney(totalLabor);
+  if(el2) el2.textContent=fmtMoney(mealCost);
+  if(el3) el3.textContent=fmtMoney(totalLabor+mealCost+p.fuelCost);
+}
+
+// ─── MATERIALS TAB ─────────────────────────
+function renderMatsTab(p) {
+  const statusOpts = ['ok','low','out'];
+  const statusLabel = {ok:'充足',low:'庫存低',out:'需補貨'};
+  const rows = p.materials.map(m => `
+    <tr>
+      <td><input class="fi" style="font-size:12px;padding:4px 8px;width:110px" value="${m.name}" onchange="updateMat(${m.id},'name',this.value)"></td>
+      <td><input class="fi" style="font-size:12px;padding:4px 8px;width:110px" value="${m.code||''}" placeholder="規格/型號" onchange="updateMat(${m.id},'code',this.value)"></td>
+      <td><input class="fi" type="number" style="width:60px;font-size:12px;padding:4px 8px" value="${m.qty}" onchange="updateMat(${m.id},'qty',+this.value)"></td>
+      <td><input class="fi" style="width:50px;font-size:12px;padding:4px 8px" value="${m.unit}" onchange="updateMat(${m.id},'unit',this.value)"></td>
+      <td>
+        <div style="display:flex;align-items:center;gap:4px">
+          <span style="font-size:11px;color:var(--muted)">NT$</span>
+          <input class="fi" type="number" style="width:70px;font-size:12px;padding:4px 8px" value="${m.price||0}" onchange="updateMat(${m.id},'price',+this.value)">
+        </div>
+      </td>
+      <td>
+        <select class="fs" style="font-size:11px;padding:3px 6px;width:80px" onchange="updateMat(${m.id},'isOwned',this.value==='true')">
+          <option ${!m.isOwned?'selected':''} value="false">採購</option>
+          <option ${m.isOwned?'selected':''} value="true">自有</option>
+        </select>
+      </td>
+      <td>
+        <select class="fs" style="font-size:11px;padding:3px 6px;width:76px" onchange="updateMat(${m.id},'status',this.value)">
+          ${statusOpts.map(s=>`<option ${m.status===s?'selected':''} value="${s}">${statusLabel[s]}</option>`).join('')}
+        </select>
+      </td>
+      <td><button class="btn btn-danger btn-xs" onclick="removeMat(${m.id})">✕</button></td>
+    </tr>`).join('');
+
+  return `
+  <div style="margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+    <div class="sec-card-title" style="border:none;padding:0;margin:0">備料清單</div>
+    <div style="display:flex;gap:8px">
+      <select class="fs" id="mat-quick-add" style="font-size:12px;padding:5px 10px;width:160px">
+        <option value="">— 快速選單 —</option>
+        ${DB.matLibrary.map(m=>`<option value="${m.id}">${m.name}</option>`).join('')}
+      </select>
+      <button class="btn btn-ghost btn-sm" onclick="quickAddMat()">加入</button>
+      <button class="btn btn-ghost btn-sm" onclick="addCustomMat()">＋ 自訂品項</button>
+    </div>
+  </div>
+  <div style="overflow-x:auto;background:var(--white);border-radius:var(--r);box-shadow:var(--shadow)">
+    <table class="tbl">
+      <thead><tr>
+        <th>品名</th><th>規格</th><th>數量</th><th>單位</th><th>單價</th><th>類型</th><th>庫存</th><th></th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  </div>`;
+}
+
+function updateMat(mid, field, val) {
+  const p = DB.projects.find(x=>x.id===currentProjId);
+  const m = p.materials.find(x=>String(x.id)===String(mid));
+  if(m) m[field] = val;
+}
+function removeMat(mid) {
+  const p = DB.projects.find(x=>x.id===currentProjId);
+  p.materials = p.materials.filter(x=>String(x.id)!==String(mid));
+  renderMTab('mats');
+}
+function quickAddMat() {
+  const sel = document.getElementById('mat-quick-add');
+  const libId = parseInt(sel.value);
+  if(!libId) return;
+  const lib = DB.matLibrary.find(x=>x.id===libId);
+  if(!lib) return;
+  const p = DB.projects.find(x=>x.id===currentProjId);
+  p.materials.push({ id:Date.now(), libId:lib.id, name:lib.name, code:lib.code||'', unit:lib.defaultUnit, qty:lib.defaultQty, price:lib.price||0, isOwned:lib.isOwned, status:'ok', note:'' });
+  renderMTab('mats');
+}
+function addCustomMat() {
+  const p = DB.projects.find(x=>x.id===currentProjId);
+  p.materials.push({ id:Date.now(), name:'新品項', code:'', unit:'個', qty:1, price:0, isOwned:false, status:'ok', note:'' });
+  renderMTab('mats');
+}
+
+// ─── PAYMENTS TAB ────────────────────────────
+function renderPaymentsTab(p) {
+  const c = p.client;
+  const received = p.payments.filter(x=>x.received).reduce((a,b)=>a+b.amount,0);
+  const pct = c.contractAmt ? Math.round(received/c.contractAmt*100) : 0;
+  const rows = p.payments.map(pay=>`
+    <tr>
+      <td><input class="fi" type="date" style="font-size:12px;padding:4px 8px;width:130px" value="${pay.date}" onchange="updatePayment(${pay.id},'date',this.value)"></td>
+      <td>
+        <div style="display:flex;align-items:center;gap:4px">
+          <span style="font-size:11px;color:var(--muted)">NT$</span>
+          <input class="fi" type="number" style="width:110px;font-size:12px;padding:4px 8px" value="${pay.amount}" onchange="updatePayment(${pay.id},'amount',+this.value);refreshPayments()">
+        </div>
+      </td>
+      <td><input class="fi" style="font-size:12px;padding:4px 8px" value="${pay.note}" placeholder="款項說明…" onchange="updatePayment(${pay.id},'note',this.value)"></td>
+      <td>
+        <select class="fs" style="font-size:12px;padding:4px 8px;width:80px" onchange="updatePayment(${pay.id},'received',this.value==='true');refreshPayments()">
+          <option ${pay.received?'selected':''} value="true">✓ 已收</option>
+          <option ${!pay.received?'selected':''} value="false">⏳ 待收</option>
+        </select>
+      </td>
+      <td><button class="btn btn-danger btn-xs" onclick="removePayment(${pay.id})">✕</button></td>
+    </tr>`).join('');
+
+  return `
+  <div style="margin-bottom:12px;display:flex;justify-content:space-between;align-items:center">
+    <div class="sec-card-title" style="border:none;padding:0;margin:0">請款記錄</div>
+    <button class="btn btn-ghost btn-sm" onclick="addPayment()">＋ 新增請款</button>
+  </div>
+  <div class="sec-card" style="margin-bottom:14px">
+    <div class="fg-row fg-3" style="margin-bottom:0">
+      <div class="fg"><label class="fl">合約總金額</label><input class="fi" type="number" id="pay-contract" value="${c.contractAmt||0}" onchange="refreshPayments()"><div style="font-size:11px;color:var(--muted);margin-top:3px">可直接修改</div></div>
+      <div class="fg"><label class="fl">已收款</label><input class="fi" id="pay-recv" readonly value="${fmtMoney(received)}"></div>
+      <div class="fg"><label class="fl">尚餘</label><input class="fi" id="pay-rem" readonly value="${fmtMoney((c.contractAmt||0)-received)}" style="color:${(c.contractAmt||0)-received>0?'var(--amber)':'var(--green)'}"></div>
+    </div>
+    <div class="pbar" style="margin-top:12px"><div class="pfill" style="width:${pct}%"></div></div>
+    <div style="font-size:11px;color:var(--muted);margin-top:4px">請款進度 ${pct}%</div>
+  </div>
+  <div style="overflow-x:auto;background:var(--white);border-radius:var(--r);box-shadow:var(--shadow)">
+    <table class="tbl">
+      <thead><tr><th>請款日期</th><th>金額</th><th>說明</th><th>狀態</th><th></th></tr></thead>
+      <tbody id="pay-tbody">${rows}</tbody>
+    </table>
+  </div>`;
+}
+
+function updatePayment(pid, field, val) {
+  const p = DB.projects.find(x=>x.id===currentProjId);
+  const pay = p.payments.find(x=>x.id===pid);
+  if(pay) pay[field] = val;
+}
+function removePayment(pid) {
+  const p = DB.projects.find(x=>x.id===currentProjId);
+  p.payments = p.payments.filter(x=>String(x.id)!==String(pid));
+  renderMTab('payments');
+}
+function addPayment() {
+  const p = DB.projects.find(x=>x.id===currentProjId);
+  const today = new Date().toISOString().slice(0,10);
+  p.payments.push({ id:Date.now(), date:today, amount:0, note:'', received:false });
+  renderMTab('payments');
+}
+function refreshPayments() {
+  const p = DB.projects.find(x=>x.id===currentProjId);
+  const contractEl = document.getElementById('pay-contract');
+  if(contractEl) p.client.contractAmt = parseFloat(contractEl.value)||0;
+  const received = p.payments.filter(x=>x.received).reduce((a,b)=>a+b.amount,0);
+  const rem = (p.client.contractAmt||0) - received;
+  const pct = p.client.contractAmt ? Math.round(received/p.client.contractAmt*100) : 0;
+  const r=document.getElementById('pay-recv'), rm=document.getElementById('pay-rem');
+  if(r) r.value=fmtMoney(received);
+  if(rm) { rm.value=fmtMoney(rem); rm.style.color=rem>0?'var(--amber)':'var(--green)'; }
+}
+
+// ─── SAVE PROJECT ─────────────────────────────
+async function deleteProject(){
+  const p=DB.projects.find(x=>String(x.id)===String(currentProjId));
+  if(!p) return;
+  if(!confirm('確定要刪除「'+p.name+'」？此操作無法復原。')) return;
+  showBanner('刪除中...');
+  try{ if(typeof p.id!=='number') await dbDelProject(p.id); }catch(e){console.error(e);}
+  DB.projects=DB.projects.filter(x=>String(x.id)!==String(currentProjId));
+  hideBanner();
+  closeModalDirect(); renderOverview(); renderProjects(); showToast('案場已刪除');
+}
+
+async function saveProject() {
+  const p = DB.projects.find(x=>String(x.id)===String(currentProjId));
+  if(!p) return;
+  // basic
+  const fields = {
+    'e-name':'name','e-addr':'address','e-hours':'workHours','e-note':'note'
+  };
+  Object.entries(fields).forEach(([id,key])=>{ const el=document.getElementById(id); if(el) p[key]=el.value; });
+  const eStatus=document.getElementById('e-status'); if(eStatus) p.status=eStatus.value;
+  const eParking=document.getElementById('e-parking'); if(eParking) p.parking=eParking.value;
+  const eStart=document.getElementById('e-start'); if(eStart) p.startDate=eStart.value;
+  const eEnd=document.getElementById('e-end'); if(eEnd) p.endDate=eEnd.value;
+  const eFuel=document.getElementById('e-fuel'); if(eFuel) p.fuelCost=parseFloat(eFuel.value)||0;
+  const eMeal=document.getElementById('e-meal'); if(eMeal) p.mealAllowance=parseFloat(eMeal.value)||0;
+  const eArea=document.getElementById('e-area'); if(eArea) p.areaValue=parseFloat(eArea.value)||0;
+  const eProg=document.getElementById('e-prog'); if(eProg) p.progress=parseInt(eProg.value)||0;
+  // client
+  const cFields = {'c-name':'name','c-contact':'contact','c-phone':'phone','c-email':'email','c-note':'note'};
+  Object.entries(cFields).forEach(([id,key])=>{ const el=document.getElementById(id); if(el) p.client[key]=el.value; });
+  const cType=document.getElementById('c-type'); if(cType) p.client.isDesignCo=cType.value==='1';
+  const cCon=document.getElementById('c-contract'); if(cCon) p.client.contractAmt=parseFloat(cCon.value)||0;
+  const pCon=document.getElementById('pay-contract'); if(pCon) p.client.contractAmt=parseFloat(pCon.value)||0;
+  // update alerts
+  p.alerts = p.materials.filter(m=>m.status==='out').map(m=>m.name+'需補貨').concat(p.materials.filter(m=>m.status==='low').map(m=>m.name+'庫存低'));
+  // update header
+  document.getElementById('pm-title').textContent = p.name;
+  document.getElementById('pm-sub').textContent = `${fmtDate(p.startDate)} → ${fmtDate(p.endDate)}`;
+  showBanner('儲存中...');
+  try { await dbSaveProject(p); await dbSaveAll(p); } catch(e) { console.error(e); }
+  hideBanner();
+  renderOverview();
+  renderAllCards();
+  showToast('已儲存 ✓');
+}
+
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.style.cssText = 'position:fixed;bottom:24px;right:24px;background:var(--bd);color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:9999;animation:slideUp .2s ease';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(), 2000);
+}
+
+// ═══════════════════════════════════════════════
+// NEW PROJECT
+// ═══════════════════════════════════════════════
+function openNewProject() { openOverlay('new-modal'); }
+async function createProject() {
+  const name = document.getElementById('np-name').value.trim();
+  if(!name) { alert('請填寫案場名稱'); return; }
+  const newP = {
+    id: DB.nextId++,
+    name, status: document.getElementById('np-status').value,
+    address: document.getElementById('np-addr').value,
+    parking: document.getElementById('np-parking').value,
+    workHours: document.getElementById('np-hours').value,
+    startDate: document.getElementById('np-start').value,
+    endDate: document.getElementById('np-end').value,
+    mealAllowance: parseFloat(document.getElementById('np-meal').value)||200,
+    fuelCost: parseFloat(document.getElementById('np-fuel').value)||0,
+    progress: 0, areaValue: 0, areaUnit: '坪',
+    client:{ name:'', contact:'', phone:'', email:'', isDesignCo:false, contractAmt:0, note:'' },
+    payments:[], areas:[], schedule:[], materials:[], alerts:[],
+    note: document.getElementById('np-note').value,
+  };
+  DB.projects.push(newP);
+  closeOverlay('new-modal');
+  renderOverview();
+  renderAllCards();
+  showToast('案場已建立 ✓');
+}
+
+// ═══════════════════════════════════════════════
+// WORKER DATABASE
+// ═══════════════════════════════════════════════
+function openWorkerDB() {
+  renderWorkerCards();
+  openOverlay('worker-modal');
+}
+function renderWorkerCards() {
+  document.getElementById('worker-cards').innerHTML = DB.workers.map(w=>`
+    <div class="worker-card" onclick="openEditWorker(${w.id})">
+      <div style="display:flex;gap:12px;align-items:center;margin-bottom:10px">
+        <div class="worker-avatar">${w.name[0]}</div>
+        <div>
+          <div style="font-weight:700;font-size:15px">${w.name}</div>
+          <div style="font-size:11px;color:var(--muted)">${w.specialty||'未填寫'}</div>
+        </div>
+        <div style="margin-left:auto;text-align:right">
+          <div style="font-weight:700;color:var(--bronze);font-size:14px">NT$${w.defaultRate.toLocaleString()}</div>
+          <div style="font-size:10px;color:var(--muted)">日薪</div>
+        </div>
+      </div>
+      <div style="font-size:12px;color:var(--muted)">${w.phone}</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:3px">年齡 ${w.age} 歲　年資 ${w.years} 年</div>
+      ${w.note ? `<div style="font-size:11px;color:var(--amber);margin-top:5px">⚠ ${w.note}</div>` : ''}
+    </div>`).join('');
+}
+function openAddWorker() {
+  document.getElementById('we-title').textContent = '新增師傅';
+  document.getElementById('we-body').innerHTML = workerForm(null);
+  openOverlay('worker-edit-modal');
+}
+function openEditWorker(id) {
+  const w = DB.workers.find(x=>String(x.id)===String(id));
+  document.getElementById('we-title').textContent = `編輯師傅：${w.name}`;
+  document.getElementById('we-body').innerHTML = workerForm(w);
+  openOverlay('worker-edit-modal');
+}
+function workerForm(w) {
+  return `
+  <div class="fg-row fg-2">
+    <div class="fg"><label class="fl">姓名 *</label><input class="fi" id="wf-name" value="${w?w.name:''}"></div>
+    <div class="fg"><label class="fl">聯絡電話</label><input class="fi" id="wf-phone" value="${w?w.phone:''}"></div>
+  </div>
+  <div class="fg-row fg-3">
+    <div class="fg"><label class="fl">年齡</label><input class="fi" type="number" id="wf-age" value="${w?w.age:''}"></div>
+    <div class="fg"><label class="fl">年資</label><input class="fi" type="number" id="wf-years" value="${w?w.years:''}"></div>
+    <div class="fg"><label class="fl">預設日薪（元）</label><input class="fi" type="number" id="wf-rate" value="${w?w.defaultRate:1600}"></div>
+  </div>
+  <div class="fg"><label class="fl">專長</label><input class="fi" id="wf-spec" value="${w?w.specialty:''}" placeholder="例：批土、麂皮飾、特殊塗料"></div>
+  <div class="fg"><label class="fl">備注</label><textarea class="fta" id="wf-note">${w?w.note:''}</textarea></div>
+  <div style="display:flex;justify-content:space-between;margin-top:14px">
+    <div>${w?`<button class="btn btn-danger btn-sm" onclick="deleteWorker(${w.id})">刪除師傅</button>`:'<span></span>'}</div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-ghost" onclick="closeOverlay('worker-edit-modal')">取消</button>
+      <button class="btn btn-primary" onclick="saveWorker(${w?w.id:'null'})">儲存</button>
+    </div>
+  </div>`;
+}
+async function saveWorker(id) {
+  const name = document.getElementById('wf-name').value.trim();
+  if(!name) { alert('請填寫姓名'); return; }
+  const data = {
+    name, phone:document.getElementById('wf-phone').value,
+    age:parseInt(document.getElementById('wf-age').value)||0,
+    years:parseInt(document.getElementById('wf-years').value)||0,
+    defaultRate:parseInt(document.getElementById('wf-rate').value)||1600,
+    specialty:document.getElementById('wf-spec').value,
+    note:document.getElementById('wf-note').value,
+  };
+  if(id===null) { DB.workers.push({ id:DB.nextWId++, ...data }); }
+  else { const w=DB.workers.find(x=>String(x.id)===String(id)); if(w) Object.assign(w,data); }
+  closeOverlay('worker-edit-modal');
+  renderWorkerCards();
+  showToast('師傅資料已儲存 ✓');
+}
+async function deleteWorker(id) {
+  if(!confirm('確定刪除此師傅？')) return;
+  DB.workers = DB.workers.filter(x=>String(x.id)!==String(id));
+  closeOverlay('worker-edit-modal');
+  renderWorkerCards();
+}
+
+// ═══════════════════════════════════════════════
+// MATERIAL LIBRARY MANAGER
+// ═══════════════════════════════════════════════
+function openMaterialMgr() {
+  renderMatMgr();
+  openOverlay('mat-modal');
+}
+function renderMatMgr() {
+  document.getElementById('mat-mgr-body').innerHTML = `
+  <div style="overflow-x:auto">
+    <table class="tbl">
+      <thead><tr><th>品名</th><th>預設單位</th><th>預設數量</th><th>單價</th><th>類型</th><th></th></tr></thead>
+      <tbody>
+        ${DB.matLibrary.map(m=>`
+          <tr>
+            <td><input class="fi" style="font-size:12px;padding:4px 8px;width:110px" value="${m.name}" onchange="updateMatLib(${m.id},'name',this.value)"></td>
+            <td><input class="fi" style="font-size:12px;padding:4px 8px;width:60px" value="${m.defaultUnit}" onchange="updateMatLib(${m.id},'defaultUnit',this.value)"></td>
+            <td><input class="fi" type="number" style="width:60px;font-size:12px;padding:4px 8px" value="${m.defaultQty}" onchange="updateMatLib(${m.id},'defaultQty',+this.value)"></td>
+            <td><input class="fi" type="number" style="width:80px;font-size:12px;padding:4px 8px" value="${m.price||0}" onchange="updateMatLib(${m.id},'price',+this.value)"></td>
+            <td><select class="fs" style="font-size:11px;padding:3px 6px" onchange="updateMatLib(${m.id},'isOwned',this.value==='true')">
+              <option ${!m.isOwned?'selected':''} value="false">採購</option>
+              <option ${m.isOwned?'selected':''} value="true">自有</option>
+            </select></td>
+            <td><button class="btn btn-danger btn-xs" onclick="removeMatLib(${m.id})">✕</button></td>
+          </tr>`).join('')}
+      </tbody>
+    </table>
+  </div>`;
+}
+function addMatItem() {
+  DB.matLibrary.push({ id:DB.nextMId++, name:'新品項', defaultUnit:'個', defaultQty:1, price:0, isOwned:false });
+  renderMatMgr();
+}
+function updateMatLib(id, field, val) {
+  const m = DB.matLibrary.find(x=>x.id===id);
+  if(m) m[field] = val;
+}
+function removeMatLib(id) {
+  DB.matLibrary = DB.matLibrary.filter(x=>String(x.id)!==String(id));
+  renderMatMgr();
+}
+
+// ═══════════════════════════════════════════════
+// SCHEDULE (GANTT)
+// ═══════════════════════════════════════════════
+function renderSchedule() {
+  // determine date range
+  const allDates = DB.projects.flatMap(p=>[p.startDate,p.endDate].filter(Boolean));
+  if(!allDates.length) { document.getElementById('gantt-ct').innerHTML='<div style="color:var(--muted);padding:20px">尚無工期資料</div>'; return; }
+  const minD = new Date(allDates.reduce((a,b)=>a<b?a:b));
+  const maxD = new Date(allDates.reduce((a,b)=>a>b?a:b));
+  document.getElementById('gantt-month').textContent = `${minD.getFullYear()}年${minD.getMonth()+1}月`;
+  const dates = [];
+  for(let d=new Date(minD); d<=maxD; d.setDate(d.getDate()+1)) dates.push(new Date(d));
+
+  let html = `<table class="gtbl"><thead><tr><th>案場</th>`;
+  dates.forEach(d=>{ html+=`<th style="min-width:28px;${d.getDay()==0||d.getDay()==6?'background:#8A7A60':''}">${d.getDate()}</th>`; });
+  html += `</tr></thead><tbody>`;
+  DB.projects.forEach(p=>{
+    const ps = p.startDate ? new Date(p.startDate) : null;
+    const pe = p.endDate ? new Date(p.endDate) : null;
+    html += `<tr><td>${p.name}</td>`;
+    dates.forEach(d=>{
+      const inRange = ps && pe && d>=ps && d<=pe;
+      const isWeekend = d.getDay()==0||d.getDay()==6;
+      if(inRange && !isWeekend) {
+        const cls = p.status==='已完工'?'done':p.status==='暫停'?'pause':'';
+        html += `<td style="padding:3px 2px"><div class="gbar ${cls}" style="height:14px"></div></td>`;
+      } else { html += `<td class="${isWeekend?'gwknd':''}"></td>`; }
+    });
+    html += `</tr>`;
+  });
+  html += `</tbody></table>`;
+  document.getElementById('gantt-ct').innerHTML = html;
+
+  let detail = '';
+  DB.projects.filter(p=>p.schedule.length>0).forEach(p=>{
+    const totalLabor = p.schedule.reduce((a,s)=>a+s.days*s.dailyRate,0);
+    const weeks = [...new Set(p.schedule.map(s=>s.week))];
+    detail += `<div class="sec-card" style="margin-bottom:14px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+        <span style="font-weight:700;font-size:15px">${p.name}</span>
+        <span class="sbadge s${p.status}">${p.status}</span>
+        <span style="margin-left:auto;font-weight:700;color:var(--bronze)">${fmtMoney(totalLabor)}</span>
+      </div>
+      <div style="overflow-x:auto">
+      <table class="tbl"><thead><tr><th>週次</th><th>師傅</th><th>工天</th><th>日薪</th><th>工項</th><th>小計</th></tr></thead><tbody>`;
+    weeks.forEach(wk=>{
+      const rows = p.schedule.filter(s=>s.week===wk);
+      rows.forEach((s,i)=>{
+        detail += `<tr>
+          ${i===0?`<td rowspan="${rows.length}" style="font-weight:700">${wk}</td>`:''}
+          <td><span class="chip">${s.workerName}</span></td>
+          <td>${s.days}</td><td>NT$${s.dailyRate.toLocaleString()}</td>
+          <td>${s.tasks}</td>
+          <td style="font-weight:600;color:var(--bronze)">NT$${(s.days*s.dailyRate).toLocaleString()}</td>
+        </tr>`;
+      });
+    });
+    detail += `</tbody></table></div></div>`;
+  });
+  document.getElementById('schedule-detail').innerHTML = detail || '<div style="color:var(--muted)">尚無排班資料</div>';
+}
+
+// ═══════════════════════════════════════════════
+// MATERIALS OVERVIEW
+// ═══════════════════════════════════════════════
+function renderMaterials() {
+  const statusMap = { ok:['sok','✓ 充足'], low:['slow','⚠ 偏低'], out:['sout','✕ 需補'] };
+  let html = `<table class="tbl"><thead><tr>
+    <th>案場</th><th>品名</th><th>規格</th><th>數量</th><th>單位</th><th>單價</th><th>類型</th><th>狀態</th>
+  </tr></thead><tbody>`;
+  DB.projects.forEach(p=>{
+    p.materials.forEach(m=>{
+      const [cls,label] = statusMap[m.status]||['','—'];
+      html += `<tr>
+        <td style="font-weight:600">${p.name}</td>
+        <td>${m.name}</td>
+        <td style="color:var(--muted)">${m.code||'—'}</td>
+        <td>${m.qty}</td><td>${m.unit}</td>
+        <td>NT$${(m.price||0).toLocaleString()}</td>
+        <td><span style="font-size:11px">${m.isOwned?'自有':'採購'}</span></td>
+        <td class="${cls}">${label}</td>
+      </tr>`;
+    });
+  });
+  html += `</tbody></table>`;
+  document.getElementById('mat-ct').innerHTML = html;
+}
+
+// ═══════════════════════════════════════════════
+// COST
+// ═══════════════════════════════════════════════
+function renderCost() {
+  let html = '';
+  let gt=0,gm=0,gf=0,gmat=0;
+  DB.projects.forEach(p=>{
+    const labor = p.schedule.reduce((a,s)=>a+s.days*s.dailyRate,0);
+    const days = p.schedule.reduce((a,s)=>a+s.days,0);
+    const meal = days * p.mealAllowance;
+    const matCost = p.materials.filter(m=>!m.isOwned).reduce((a,m)=>a+(m.price||0)*m.qty,0);
+    gt+=labor; gm+=meal; gf+=p.fuelCost; gmat+=matCost;
+    const contractAmt = p.client.contractAmt||0;
+    const received = p.payments.filter(x=>x.received).reduce((a,b)=>a+b.amount,0);
+    html += `<div class="sec-card" style="margin-bottom:14px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+        <span style="font-weight:700;font-size:15px">${p.name}</span>
+        <span class="sbadge s${p.status}">${p.status}</span>
+      </div>
+      <div class="cost-row"><span class="cost-lbl">工資（${days}工）</span><span class="cost-val">${fmtMoney(labor)}</span></div>
+      <div class="cost-row"><span class="cost-lbl">餐費（${days}工 × NT$${p.mealAllowance}）</span><span class="cost-val">${fmtMoney(meal)}</span></div>
+      <div class="cost-row"><span class="cost-lbl">油資</span><span class="cost-val">${fmtMoney(p.fuelCost)}</span></div>
+      <div class="cost-row"><span class="cost-lbl">採購材料估計</span><span class="cost-val">${fmtMoney(matCost)}</span></div>
+      <div class="cost-total"><span>支出小計</span><span>${fmtMoney(labor+meal+p.fuelCost+matCost)}</span></div>
+      <div style="margin-top:12px;padding:10px 14px;background:var(--stone);border-radius:8px;font-size:13px">
+        <div class="cost-row"><span class="cost-lbl">合約金額</span><span class="cost-val">${fmtMoney(contractAmt)}</span></div>
+        <div class="cost-row"><span class="cost-lbl">已收款</span><span class="cost-val" style="color:var(--green)">${fmtMoney(received)}</span></div>
+        <div class="cost-row"><span class="cost-lbl">尚餘</span><span class="cost-val" style="color:var(--amber)">${fmtMoney(contractAmt-received)}</span></div>
+        <div class="cost-row"><span class="cost-lbl">毛利估算</span><span class="cost-val" style="color:var(--blue)">${fmtMoney(contractAmt-(labor+meal+p.fuelCost+matCost))}</span></div>
+      </div>
+    </div>`;
+  });
+  const total = gt+gm+gf+gmat;
+  html += `<div style="background:var(--bd);color:#fff;border-radius:var(--r);padding:20px">
+    <div style="font-weight:700;font-size:16px;margin-bottom:12px">🧮 所有案場合計</div>
+    <div class="cost-row" style="border-bottom-color:rgba(255,255,255,.15);font-size:14px"><span style="opacity:.8">工資</span><span>${fmtMoney(gt)}</span></div>
+    <div class="cost-row" style="border-bottom-color:rgba(255,255,255,.15);font-size:14px"><span style="opacity:.8">餐費</span><span>${fmtMoney(gm)}</span></div>
+    <div class="cost-row" style="border-bottom-color:rgba(255,255,255,.15);font-size:14px"><span style="opacity:.8">油資</span><span>${fmtMoney(gf)}</span></div>
+    <div class="cost-row" style="border-bottom-color:rgba(255,255,255,.15);font-size:14px"><span style="opacity:.8">材料採購</span><span>${fmtMoney(gmat)}</span></div>
+    <div style="display:flex;justify-content:space-between;padding:10px 0 0;font-size:18px;font-weight:700"><span>總支出</span><span>${fmtMoney(total)}</span></div>
+  </div>`;
+  document.getElementById('cost-ct').innerHTML = html;
+}
+
+// ═══════════════════════════════════════════════
+// ALERTS
+// ═══════════════════════════════════════════════
+function renderAlerts() {
+  const alerts = [];
+  DB.projects.forEach(p=>{
+    p.materials.filter(m=>m.status==='out').forEach(m=>{
+      alerts.push({ level:'urgent', icon:'📦', title:`${p.name} — ${m.name} 需補貨`, desc:`請在開工前採購`, proj:p.name });
+    });
+    p.materials.filter(m=>m.status==='low').forEach(m=>{
+      alerts.push({ level:'warn', icon:'⚠️', title:`${p.name} — ${m.name} 庫存偏低`, desc:`請確認數量是否足夠`, proj:p.name });
+    });
+    if(p.schedule.length===0 && p.status==='待開工') {
+      alerts.push({ level:'warn', icon:'👷', title:`${p.name} — 尚未安排師傅`, desc:`開工前請確認排班`, proj:p.name });
+    }
+    if(p.parking==='待確認') {
+      alerts.push({ level:'warn', icon:'🚗', title:`${p.name} — 停車位待確認`, desc:`請洽業主或管委會`, proj:p.name });
+    }
+    if(p.client.contractAmt>0) {
+      const received = p.payments.filter(x=>x.received).reduce((a,b)=>a+b.amount,0);
+      const pct = Math.round(received/p.client.contractAmt*100);
+      if(pct<30 && p.status==='施工中') {
+        alerts.push({ level:'warn', icon:'💰', title:`${p.name} — 請款進度偏低（${pct}%）`, desc:`合約 ${fmtMoney(p.client.contractAmt)}，已收 ${fmtMoney(received)}`, proj:p.name });
+      }
+    }
+  });
+  document.getElementById('alert-count').textContent = alerts.length;
+  document.getElementById('alert-summary').textContent = `待處理 ${alerts.length} 項`;
+  document.getElementById('alerts-ct').innerHTML = alerts.length ? alerts.map(a=>`
+    <div class="ali ${a.level}">
+      <div style="font-size:20px">${a.icon}</div>
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:600">${a.title}</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px">${a.desc}</div>
+      </div>
+      <button class="btn btn-ghost btn-xs" onclick="openProjectByName('${a.proj}')">查看</button>
+    </div>`).join('') : '<div style="text-align:center;padding:40px;color:var(--muted)">🎉 目前沒有待處理提醒</div>';
+}
+
+function openProjectByName(name) {
+  const p = DB.projects.find(x=>x.name===name);
+  if(p) openProject(p.id);
+}
+
+// ══════════════════════════════════════════════════
+// EXTRA TAB FUNCTIONS (圖面/打板/日報/開支)
+// ══════════════════════════════════════════════════
+async function compressImage(file,maxW=900,q=0.75){return new Promise(res=>{const reader=new FileReader();reader.onload=e=>{const img=new Image();img.onload=()=>{const c=document.createElement('canvas');let w=img.width,h=img.height;if(w>maxW){h=Math.round(h*maxW/w);w=maxW;}c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);res(c.toDataURL('image/jpeg',q));};img.src=e.target.result;};reader.readAsDataURL(file);});}
+function lightbox(src){let lb=document.getElementById('lbox');if(!lb){lb=document.createElement('div');lb.id='lbox';lb.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:600;display:flex;align-items:center;justify-content:center;cursor:pointer';lb.onclick=()=>lb.remove();document.body.appendChild(lb);}lb.innerHTML=`<img src="${src}" style="max-width:92%;max-height:88vh;border-radius:8px;object-fit:contain">`;lb.style.display='flex';}
+
+// 圖面參考
+function renderRefImgsTab(p){if(!p.refImgs)p.refImgs=[];const imgs=(p.refImgs||[]).map((s,i)=>`<div style="position:relative;display:inline-block;margin:4px"><img src="${s}" style="width:130px;height:130px;object-fit:cover;border-radius:7px;cursor:pointer;border:1px solid var(--border)" onclick="lightbox('${s}')"><button onclick="rmRefImg(${i})" style="position:absolute;top:3px;right:3px;background:rgba(0,0,0,.6);color:#fff;border:none;border-radius:50%;width:20px;height:20px;cursor:pointer;font-size:11px">✕</button></div>`).join('');return `<div style="padding:16px"><div style="font-size:11px;color:var(--muted);margin-bottom:10px">上傳設計師圖面或現場參考照片，方便施工時調閱。</div><div style="margin-bottom:12px">${imgs}</div><button class="btn btn-g btn-sm" onclick="addRefImg()">＋ 新增圖面/照片</button></div>`;}
+function addRefImg(){const input=document.createElement('input');input.type='file';input.accept='image/*';input.multiple=true;input.onchange=async e=>{const p=DB.projects.find(x=>String(x.id)===String(currentProjId));if(!p.refImgs)p.refImgs=[];for(const f of Array.from(e.target.files)){p.refImgs.push(await compressImage(f));}renderMTab('refimgs');};input.click();}
+function rmRefImg(i){const p=DB.projects.find(x=>String(x.id)===String(currentProjId));if(p.refImgs)p.refImgs.splice(i,1);renderMTab('refimgs');}
+
+// 打板紀錄
+function renderSamplesTab(p){if(!p.samples)p.samples=[];const html=(p.samples||[]).map(s=>`<div style="background:var(--stone);border-radius:8px;padding:14px;margin-bottom:10px;border:1px solid var(--border)"><div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap"><input class="fi" style="font-weight:700;font-size:14px;flex:1;min-width:100px" value="${s.title||''}" onchange="updSamp('${s.id}','title',this.value)"><input class="fi" type="date" style="width:140px" value="${s.date||''}" onchange="updSamp('${s.id}','date',this.value)"><span style="padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700;background:${s.status==='confirmed'?'#EAF2EA':'#FEF3DC'};color:${s.status==='confirmed'?'var(--green)':'var(--amber)'}">${s.status==='confirmed'?'✓定案':'⏳待確認'}</span><button class="btn btn-d btn-xs" onclick="rmSamp('${s.id}')">刪除</button></div><div class="fg" style="margin-bottom:10px"><label class="fl">塗料比例/手法</label><textarea class="fta" style="min-height:55px" onchange="updSamp('${s.id}','ratio',this.value)">${s.ratio||''}</textarea></div><div class="fl" style="margin-bottom:6px">打板照片</div><div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">${(s.photos||[]).map((ph,i)=>`<div style="position:relative"><img src="${ph}" style="width:88px;height:88px;object-fit:cover;border-radius:6px;cursor:pointer" onclick="lightbox('${ph}')"><button onclick="rmSampPhoto('${s.id}',${i})" style="position:absolute;top:2px;right:2px;background:rgba(0,0,0,.6);color:#fff;border:none;border-radius:50%;width:18px;height:18px;cursor:pointer;font-size:10px">✕</button></div>`).join('')}<div onclick="addSampPhoto('${s.id}')" style="width:88px;height:88px;background:var(--border);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:22px;color:var(--muted);cursor:pointer;border:2px dashed var(--border)">＋</div></div>${s.status==='pending'?`<button class="btn btn-green btn-sm" onclick="confirmSamp('${s.id}')">✓ 業主已確認，填入定案說明</button>`:`<div style="padding:10px;background:#EAF2EA;border-radius:7px"><div class="fl" style="color:var(--green);margin-bottom:5px">✓ 定案說明</div><textarea class="fta" style="min-height:50px" onchange="updSamp('${s.id}','confirmedNote',this.value)">${s.confirmedNote||''}</textarea></div>`}</div>`).join('');return `<div style="display:flex;justify-content:flex-end;margin-bottom:10px"><button class="btn btn-g btn-sm" onclick="addSamp()">＋ 新增打板</button></div>${html||'<div style="text-align:center;padding:40px;color:var(--muted)">尚無打板紀錄</div>'}`;}
+function updSamp(id,f,v){const p=DB.projects.find(x=>String(x.id)===String(currentProjId));const s=(p.samples||[]).find(x=>String(x.id)===String(id));if(s)s[f]=v;}
+function addSamp(){const p=DB.projects.find(x=>String(x.id)===String(currentProjId));if(!p.samples)p.samples=[];p.samples.push({id:Date.now(),date:new Date().toISOString().slice(0,10),title:'新打板',ratio:'',photos:[],status:'pending',confirmedNote:''});renderMTab('samples');}
+function rmSamp(id){const p=DB.projects.find(x=>String(x.id)===String(currentProjId));p.samples=(p.samples||[]).filter(x=>String(x.id)!==String(id));renderMTab('samples');}
+function addSampPhoto(sid){const input=document.createElement('input');input.type='file';input.accept='image/*';input.multiple=true;input.onchange=async e=>{const p=DB.projects.find(x=>String(x.id)===String(currentProjId));const s=(p.samples||[]).find(x=>String(x.id)===String(sid));if(s){for(const f of Array.from(e.target.files))s.photos.push(await compressImage(f));renderMTab('samples');}};input.click();}
+function rmSampPhoto(sid,i){const p=DB.projects.find(x=>String(x.id)===String(currentProjId));const s=(p.samples||[]).find(x=>String(x.id)===String(sid));if(s){s.photos.splice(i,1);renderMTab('samples');}}
+function confirmSamp(id){const p=DB.projects.find(x=>String(x.id)===String(currentProjId));const s=(p.samples||[]).find(x=>String(x.id)===String(id));if(s){s.status='confirmed';renderMTab('samples');}}
+
+// 工程日報
+const WEATHER_OPTS=['☀️ 晴天','🌤 多雲','☁️ 陰天','🌧 雨天','⛈ 雷雨'];
+function renderReportTab(p){
+  if(!p.report)p.report=[];
+  const sorted=[...p.report].sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  const html=sorted.map(r=>{
+    const photos=r.photos||[],caps=r.photoCaptions||[];
+    let ph='';
+    for(let i=0;i<photos.length;i+=2){
+      const s1=photos[i],s2=photos[i+1]||null,c1=caps[i]||'',c2=caps[i+1]||'';
+      ph+=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+        <div style="border:1px solid var(--border);border-radius:7px;overflow:hidden">
+          <img src="${s1}" style="width:100%;height:160px;object-fit:contain;display:block;cursor:pointer;background:#f5f2ee" onclick="lightbox('${s1}')">
+          <input class="fi" style="font-size:11px;padding:5px 8px;border:none;border-top:1px solid var(--border);border-radius:0" placeholder="照片說明…" value="${c1}" oninput="updRptCap('${r.id}',${i},this.value)">
+        </div>
+        <div style="border:1px solid var(--border);border-radius:7px;overflow:hidden">
+          ${s2?`<img src="${s2}" style="width:100%;height:160px;object-fit:contain;display:block;cursor:pointer;background:#f5f2ee" onclick="lightbox('${s2}')"><input class="fi" style="font-size:11px;padding:5px 8px;border:none;border-top:1px solid var(--border);border-radius:0" placeholder="照片說明…" value="${c2}" oninput="updRptCap('${r.id}',${i+1},this.value)">`:`<div style="width:100%;height:160px;background:var(--stone);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--muted);font-size:22px" onclick="addRptPhoto('${r.id}')">＋</div>`}
+        </div>
+      </div>`;
+    }
+    return `<div class="sc-card" style="margin-bottom:14px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+        <div style="font-weight:700;font-size:14px;color:var(--bd)">${r.date||'（未填日期）'}</div>
+        <div style="display:flex;gap:6px"><button class="btn btn-g btn-sm" onclick="addRptPhoto('${r.id}')">＋ 照片</button><button class="btn btn-d btn-xs" onclick="rmRpt('${r.id}')">刪除</button></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px">
+        <div class="fg" style="margin:0"><label class="fl">日期</label><input class="fi" type="date" value="${r.date||''}" onchange="updRpt('${r.id}','date',this.value)"></div>
+        <div class="fg" style="margin:0"><label class="fl">天氣</label><select class="fs" onchange="updRpt('${r.id}','weather',this.value)">${WEATHER_OPTS.map(w=>`<option ${(r.weather||'☀️ 晴天')===w?'selected':''}>${w}</option>`).join('')}</select></div>
+        <div class="fg" style="margin:0"><label class="fl">出工人數</label><input class="fi" type="number" min="0" value="${r.workersCount||''}" onchange="updRpt('${r.id}','workersCount',+this.value)"></div>
+      </div>
+      <div class="fg" style="margin-bottom:12px"><label class="fl">工程說明</label><textarea class="fta" style="min-height:55px" onchange="updRpt('${r.id}','caption',this.value)">${r.caption||''}</textarea></div>
+      <div class="fl" style="margin-bottom:8px">施工照片${photos.length>0?` (${photos.length}張)`:''}</div>
+      ${ph}${photos.length===0?`<div style="text-align:center;padding:20px;background:var(--stone);border-radius:7px;cursor:pointer;color:var(--muted)" onclick="addRptPhoto('${r.id}')">點擊上傳照片</div>`:''}
+    </div>`;
+  }).join('');
+  return `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+    <button class="btn" style="background:var(--bd);color:#fff;border:none" onclick="exportReportPDF()">📄 匯出 PDF</button>
+    <button class="btn btn-g btn-sm" onclick="addRpt()">＋ 新增日誌</button>
+  </div>${html||'<div style="text-align:center;padding:40px;color:var(--muted)">尚無日誌，點擊上方新增</div>'}`;
+}
+function updRpt(id,f,v){const p=DB.projects.find(x=>String(x.id)===String(currentProjId));const r=(p.report||[]).find(x=>String(x.id)===String(id));if(r)r[f]=v;}
+function updRptCap(id,idx,val){const p=DB.projects.find(x=>String(x.id)===String(currentProjId));const r=(p.report||[]).find(x=>String(x.id)===String(id));if(!r)return;if(!r.photoCaptions)r.photoCaptions=[];while(r.photoCaptions.length<=idx)r.photoCaptions.push('');r.photoCaptions[idx]=val;}
+function addRpt(){const p=DB.projects.find(x=>String(x.id)===String(currentProjId));if(!p.report)p.report=[];p.report.push({id:Date.now(),date:new Date().toISOString().slice(0,10),weather:'☀️ 晴天',workersCount:1,photos:[],photoCaptions:[],caption:''});renderMTab('report');}
+function rmRpt(id){const p=DB.projects.find(x=>String(x.id)===String(currentProjId));p.report=(p.report||[]).filter(x=>String(x.id)!==String(id));renderMTab('report');}
+function addRptPhoto(rid){const input=document.createElement('input');input.type='file';input.accept='image/*';input.multiple=true;input.onchange=async e=>{const p=DB.projects.find(x=>String(x.id)===String(currentProjId));const r=(p.report||[]).find(x=>String(x.id)===String(rid));if(r){for(const f of Array.from(e.target.files)){r.photos.push(await compressImage(f));if(!r.photoCaptions)r.photoCaptions=[];r.photoCaptions.push('');}renderMTab('report');}};input.click();}
+function rmRptPhoto(rid,i){const p=DB.projects.find(x=>String(x.id)===String(currentProjId));const r=(p.report||[]).find(x=>String(x.id)===String(rid));if(r){r.photos.splice(i,1);if(r.photoCaptions)r.photoCaptions.splice(i,1);renderMTab('report');}}
+
+// PDF 匯出
+const _LOGO='data:image/jpeg;base64,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';
+function exportReportPDF(){
+  const p=DB.projects.find(x=>String(x.id)===String(currentProjId));
+  if(!p||!(p.report||[]).length){alert('尚無日誌可匯出');return;}
+  const sorted=[...p.report].sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+  const pages=[];
+  sorted.forEach(r=>{
+    const photos=r.photos||[],caps=r.photoCaptions||[];
+    const PERPAGE=4;
+    for(let start=0;start<Math.max(photos.length,1);start+=PERPAGE){
+      const chunk=photos.slice(start,start+PERPAGE);
+      const isFirst=start===0;
+      let photoHtml='';
+      for(let i=0;i<chunk.length;i+=2){
+        const p1=chunk[i],p2=chunk[i+1]||null,c1=caps[start+i]||'',c2=caps[start+i+1]||'';
+        photoHtml+=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+          <div style="border:1px solid #ddd;border-radius:5px;overflow:hidden;background:#f9f9f9"><div style="width:100%;height:200px;display:flex;align-items:center;justify-content:center;background:#f5f3f0"><img src="${p1}" style="max-width:100%;max-height:200px;object-fit:contain"></div><div style="font-size:10px;color:#555;padding:5px 8px;border-top:1px solid #eee">${c1||'（無說明）'}</div></div>
+          <div style="border:1px solid #ddd;border-radius:5px;overflow:hidden;background:#f9f9f9">${p2?`<div style="width:100%;height:200px;display:flex;align-items:center;justify-content:center;background:#f5f3f0"><img src="${p2}" style="max-width:100%;max-height:200px;object-fit:contain"></div><div style="font-size:10px;color:#555;padding:5px 8px;border-top:1px solid #eee">${c2||'（無說明）'}</div>`:`<div style="height:200px;background:#f5f5f5"></div>`}</div>
+        </div>`;
+      }
+      pages.push(`<div style="padding:18mm 20mm;box-sizing:border-box;min-height:260mm;position:relative;background:#fff;margin-bottom:8px;border-radius:4px">
+        ${isFirst?`<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px">
+          <div style="display:flex;align-items:center;gap:12px"><img src="${_LOGO}" style="width:52px;height:52px;border-radius:50%;object-fit:cover"><div><div style="font-size:17px;font-weight:800;color:#2C2318">${p.name}</div><div style="font-size:11px;color:#666;margin-top:2px">${p.address||''}${p.client&&p.client.contact?' | 業主：'+p.client.contact:''}</div></div></div>
+          <div style="text-align:right;font-size:12px;color:#444;line-height:1.9"><div>日期：${r.date||'—'}</div><div>天氣：${r.weather||'—'}</div><div>出工：${r.workersCount||0} 人</div></div>
+        </div>
+        <div style="height:1px;background:#3C2414;margin-bottom:12px"></div>
+        <div style="margin-bottom:12px"><div style="font-size:12px;font-weight:700;color:#2C2318;margin-bottom:6px">■ 工程說明</div><div style="font-size:12px;color:#333;background:#f9f7f4;padding:8px 10px;border-radius:5px;white-space:pre-wrap">${r.caption||'（無說明）'}</div></div>
+        ${photos.length>0?`<div style="font-size:12px;font-weight:700;color:#2C2318;margin-bottom:8px">■ 施工照片（${photos.length}張）</div>`:''}`
+        :`<div style="display:flex;justify-content:space-between;padding-bottom:10px;border-bottom:1px solid #ddd;margin-bottom:14px;font-size:13px"><span style="font-weight:700">${p.name}</span><span style="color:#888">${r.date||''}</span></div>`}
+        ${photoHtml}
+        <div style="position:absolute;bottom:6mm;left:20mm;right:20mm;font-size:9px;color:#aaa;display:flex;justify-content:space-between;border-top:1px solid #eee;padding-top:4px"><span>FORM FEEL 施工日誌</span><span>第 ${pages.length+1} 頁</span></div>
+      </div>`);
+    }
+  });
+  let overlay=document.getElementById('rpt-pdf-overlay');
+  if(overlay)overlay.remove();
+  overlay=document.createElement('div');
+  overlay.id='rpt-pdf-overlay';
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:500;display:flex;flex-direction:column;align-items:center;padding:20px;overflow-y:auto';
+  overlay.innerHTML=`<div style="background:#fff;border-radius:12px;width:100%;max-width:860px;overflow:hidden"><div style="background:#3C2414;color:#fff;padding:12px 16px;display:flex;align-items:center;justify-content:space-between"><span style="font-weight:700">施工日誌 — ${p.name}</span><div style="display:flex;gap:8px"><button onclick="window.print()" style="background:rgba(255,255,255,.2);border:none;color:#fff;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px">🖨️ 列印/存PDF</button><button onclick="document.getElementById('rpt-pdf-overlay').remove()" style="background:rgba(255,255,255,.2);border:none;color:#fff;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:14px">✕</button></div></div><div style="padding:10px;background:#eee"><style>@media print{body>*:not(#rpt-pdf-overlay){display:none!important}}</style>${pages.join('')}</div></div>`;
+  document.body.appendChild(overlay);
+}
+
+// 開支明細
+function renderExpensesTab(p){
+  if(!p.expenses)p.expenses=[];
+  const labor=(p.schedule||[]).reduce((a,s)=>a+(s.dailyRate*(parseFloat(s.days)||1)),0);
+  const days=(p.schedule||[]).reduce((a,s)=>a+(parseFloat(s.days)||1),0);
+  const meal=days*(p.mealAllowance||200),fuel=p.fuelCost||0;
+  const acc=(p.accommodation?.cost||0)*(p.accommodation?.days||0);
+  const matCost=(p.materials||[]).filter(m=>!m.isOwned).reduce((a,m)=>a+(m.price||0)*(m.qty||1),0);
+  const expTotal=(p.expenses||[]).reduce((a,e)=>a+e.amount,0);
+  const total=labor+meal+fuel+acc+matCost+expTotal;
+  const contract=p.client?.contractAmt||0;
+  const recv=(p.payments||[]).filter(x=>x.received).reduce((a,b)=>a+b.amount,0);
+  const profit=contract-total;
+  const fmtM=n=>'NT$ '+(n||0).toLocaleString();
+  const rows=(p.expenses||[]).map(e=>`<tr>
+    <td><input class="fi" type="date" style="width:128px;font-size:12px;padding:4px 7px" value="${e.date||''}" onchange="updExp('${e.id}','date',this.value)"></td>
+    <td><input class="fi" style="font-size:12px;padding:4px 7px" value="${e.item||''}" placeholder="說明" onchange="updExp('${e.id}','item',this.value)"></td>
+    <td><input class="fi" type="number" style="width:100px;font-size:12px;padding:4px 7px" value="${e.amount||0}" onchange="updExp('${e.id}','amount',+this.value);renderMTab('expenses')"></td>
+    <td><select class="fs" style="font-size:12px;padding:4px 7px;width:80px" onchange="updExp('${e.id}','reimbursed',this.value==='true');renderMTab('expenses')"><option ${e.reimbursed?'selected':''} value="true">✓已還</option><option ${!e.reimbursed?'selected':''} value="false">⏳未還</option></select></td>
+    <td><button class="btn btn-d btn-xs" onclick="rmExp('${e.id}')">✕</button></td>
+  </tr>`).join('');
+  return `<div style="background:${profit>=0?'linear-gradient(120deg,#3A5A3A,#5A7A5A)':'linear-gradient(120deg,#8A3A2A,#A05040)'};color:#fff;border-radius:var(--r);padding:16px 18px;margin-bottom:14px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+    <div style="flex:1"><div style="font-size:10px;opacity:.7">合約金額</div><div style="font-size:17px;font-weight:700">${fmtM(contract)}</div></div>
+    <div style="opacity:.4;font-size:18px">−</div>
+    <div style="flex:1"><div style="font-size:10px;opacity:.7">總支出</div><div style="font-size:17px;font-weight:700">${fmtM(total)}</div></div>
+    <div style="opacity:.4;font-size:18px">=</div>
+    <div style="flex:1"><div style="font-size:10px;opacity:.7">毛利</div><div style="font-size:20px;font-weight:800">${fmtM(profit)}</div></div>
+  </div>
+  <div class="sc-card" style="margin-bottom:14px"><div class="sc-title">支出明細（自動計算）</div>
+    ${[['🔨 工資（'+days.toFixed(1)+'工）',labor],['🍱 餐費',meal],['⛽ 油資',fuel],['🏠 住宿（'+(p.accommodation?.days||0)+'晚）',acc],['📦 備品採購',matCost],['💳 代墊項目',expTotal]].map(([l,v])=>`<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--stone);font-size:13px"><span style="color:var(--muted)">${l}</span><span style="font-weight:700">${fmtM(v)}</span></div>`).join('')}
+    <div style="display:flex;justify-content:space-between;padding:10px 14px;background:var(--bd);color:#fff;border-radius:8px;font-weight:700;font-size:14px;margin-top:8px"><span>總支出</span><span>${fmtM(total)}</span></div>
+  </div>
+  <div class="sc-card"><div class="sc-title">代墊項目</div>
+    <div style="display:flex;justify-content:flex-end;margin-bottom:10px"><button class="btn btn-g btn-sm" onclick="addExp()">＋ 新增代墊</button></div>
+    <div style="overflow-x:auto"><table class="tbl"><thead><tr><th>日期</th><th>說明</th><th>金額</th><th>狀態</th><th></th></tr></thead>
+    <tbody>${rows||'<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:12px">尚無代墊記錄</td></tr>'}</tbody></table></div>
+  </div>`;
+}
+function updExp(id,f,v){const p=DB.projects.find(x=>String(x.id)===String(currentProjId));const e=(p.expenses||[]).find(x=>String(x.id)===String(id));if(e)e[f]=v;}
+function addExp(){const p=DB.projects.find(x=>String(x.id)===String(currentProjId));if(!p.expenses)p.expenses=[];p.expenses.push({id:Date.now(),date:new Date().toISOString().slice(0,10),item:'',amount:0,note:'',reimbursed:false});renderMTab('expenses');}
+function rmExp(id){const p=DB.projects.find(x=>String(x.id)===String(currentProjId));p.expenses=(p.expenses||[]).filter(x=>String(x.id)!==String(id));renderMTab('expenses');}
+
+// ═══════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════
+loadAll();
+</script>
+</body>
+</html>
