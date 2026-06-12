@@ -300,7 +300,6 @@ main{padding:20px 24px;max-width:1400px;margin:0 auto}
       <div style="display:flex;gap:8px;align-items:center">
         <button class="btn btn-sm" style="background:rgba(255,255,255,.2);color:#fff;border:none" onclick="saveProject()">💾 儲存</button>
         <button class="btn btn-sm" style="background:rgba(180,40,20,.4);color:#fff;border:none" onclick="deleteProject()">🗑 刪除</button>
-        <button class="btn btn-sm" style="background:rgba(180,40,20,.4);color:#fff;border:none" onclick="deleteProject()">🗑 刪除</button>
         <button class="mclose" onclick="closeOverlay('proj-modal')">✕</button>
       </div>
     </div>
@@ -459,7 +458,7 @@ async function loadAll(){
     ]);
 
     DB.workers=(ws||[]).map(w=>({id:w.id,name:w.name,phone:w.phone||'',age:w.age||0,years:w.years||0,defaultRate:w.default_rate||1600,specialty:w.specialty||'',note:w.note||''}));
-    DB.matLib=(ml||[]).map(m=>({id:m.id,name:m.name,defaultUnit:m.default_unit||'個',defaultQty:m.default_qty||1,price:m.price||0,isOwned:m.is_owned||false}));
+    DB.matLibrary=(ml||[]).map(m=>({id:m.id,name:m.name,defaultUnit:m.default_unit||'個',defaultQty:m.default_qty||1,price:m.price||0,isOwned:m.is_owned||false}));
 
     DB.projects=(ps||[]).map(p=>{
       const c=(cs||[]).find(x=>x.project_id===p.id)||{};
@@ -811,7 +810,7 @@ function showMTab(tab, el) {
 }
 
 function renderMTab(tab) {
-  const p = DB.projects.find(x=>x.id===currentProjId);
+  const p = DB.projects.find(x=>String(x.id)===String(currentProjId));
   if(!p) return;
   const body = document.getElementById('pm-body');
   if(tab==='basic') body.innerHTML = renderBasicTab(p);
@@ -820,6 +819,10 @@ function renderMTab(tab) {
   else if(tab==='workers-tab') body.innerHTML = renderWorkersTab(p);
   else if(tab==='mats') body.innerHTML = renderMatsTab(p);
   else if(tab==='payments') body.innerHTML = renderPaymentsTab(p);
+  else if(tab==='refimgs') body.innerHTML = renderRefImgsTab(p);
+  else if(tab==='samples') body.innerHTML = renderSamplesTab(p);
+  else if(tab==='report') body.innerHTML = renderReportTab(p);
+  else if(tab==='expenses') body.innerHTML = renderExpensesTab(p);
 }
 
 // ─── BASIC TAB ───────────────────────────────
