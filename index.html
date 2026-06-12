@@ -448,6 +448,37 @@ const api={
   del:(t,p)=>supa('DELETE',t,null,p),
 };
 
+function updateAreaDirect(id, val) {
+  const p = DB.projects.find(x=>String(x.id)===String(currentProjId));
+  const a = p.areas.find(x=>String(x.id)===String(id));
+  if(!a) return;
+  a.directArea = parseFloat(val)||null;
+  const el = document.getElementById('area-direct-'+id);
+  if(el) {
+    const v = a.directArea;
+    const u = a.directUnit||'坪';
+    el.textContent = v ? (u==='坪' ? v+' 坪 / '+(v*3.305785).toFixed(2)+' ㎡' : v+' ㎡ / '+(v/3.305785).toFixed(2)+' 坪') : '—';
+  }
+}
+function updateAreaUnit(id, unit, btn) {
+  const p = DB.projects.find(x=>String(x.id)===String(currentProjId));
+  const a = p.areas.find(x=>String(x.id)===String(id));
+  if(!a) return;
+  a.directUnit = unit;
+  // Update button styles
+  const parent = btn.parentElement;
+  parent.querySelectorAll('button').forEach(b => {
+    const active = b.textContent === unit;
+    b.style.background = active ? 'var(--bronze)' : 'transparent';
+    b.style.color = active ? '#fff' : 'var(--muted)';
+  });
+  // Update display
+  const el = document.getElementById('area-direct-'+id);
+  if(el && a.directArea) {
+    el.textContent = unit==='坪' ? a.directArea+' 坪 / '+(a.directArea*3.305785).toFixed(2)+' ㎡' : a.directArea+' ㎡ / '+(a.directArea/3.305785).toFixed(2)+' 坪';
+  }
+}
+
 function showBanner(msg){let el=document.getElementById('load-banner');if(!el){el=document.createElement('div');el.id='load-banner';el.style.cssText='position:fixed;top:0;left:0;right:0;background:var(--bronze);color:#fff;text-align:center;padding:8px;font-size:13px;font-weight:600;z-index:9999';document.body.prepend(el);}el.textContent=msg;}
 function hideBanner(){const el=document.getElementById('load-banner');if(el)el.remove();}
 
@@ -1025,17 +1056,27 @@ function renderAreasTab(p) {
   const areasHtml = p.areas.map(a => `
     <div class="area-card" id="area-${a.id}">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-        <input class="fi" value="${a.name}" style="font-weight:700;font-size:14px;flex:1;margin-right:8px" onchange="updateAreaName(${a.id},this.value)">
-        <button class="btn btn-danger btn-xs" onclick="removeArea(${a.id})">刪除</button>
+        <input class="fi" value="${a.name}" style="font-weight:700;font-size:14px;flex:1;margin-right:8px" onchange="updateAreaName('${a.id}',this.value)">
+        <button class="btn btn-danger btn-xs" onclick="removeArea('${a.id}')">刪除</button>
       </div>
-      <div style="display:flex;gap:8px;margin-bottom:8px;align-items:center">
-        <input class="fi" type="number" style="width:90px" placeholder="寬(m)" value="${a.width||''}" onchange="updateAreaDim(${a.id},'width',this.value)">
+      <div style="display:flex;gap:8px;margin-bottom:6px;align-items:center;flex-wrap:wrap">
+        <span style="font-size:11px;color:var(--muted);white-space:nowrap">尺寸：</span>
+        <input class="fi" type="number" style="width:82px" placeholder="寬(m)" value="${a.width||''}" oninput="updateAreaDim('${a.id}','width',this.value)">
         <span style="color:var(--muted)">×</span>
-        <input class="fi" type="number" style="width:90px" placeholder="高(m)" value="${a.height||''}" onchange="updateAreaDim(${a.id},'height',this.value)">
-        <span style="font-size:12px;color:var(--muted)">= </span>
-        <span style="font-weight:700;color:var(--bronze);font-size:14px" id="area-calc-${a.id}">${a.width&&a.height ? (a.width*a.height).toFixed(2)+' ㎡' : '—'}</span>
+        <input class="fi" type="number" style="width:82px" placeholder="高(m)" value="${a.height||''}" oninput="updateAreaDim('${a.id}','height',this.value)">
+        <span style="font-size:12px;color:var(--muted)">=</span>
+        <span style="font-weight:700;color:var(--bronze);font-size:13px" id="area-calc-${a.id}">${a.width&&a.height?(a.width*a.height).toFixed(2)+' ㎡ / '+(a.width*a.height/3.305785).toFixed(2)+' 坪':'—'}</span>
       </div>
-      <div class="fg"><label class="fl">備注</label><input class="fi" value="${a.note}" placeholder="施作說明…" onchange="updateAreaNote(${a.id},this.value)"></div>
+      <div style="display:flex;gap:8px;margin-bottom:8px;align-items:center;flex-wrap:wrap">
+        <span style="font-size:11px;color:var(--muted);white-space:nowrap">或直接填面積：</span>
+        <input class="fi" type="number" style="width:90px" placeholder="面積" value="${a.directArea||''}" oninput="updateAreaDirect('${a.id}',this.value)">
+        <div style="display:inline-flex;background:var(--stone);border-radius:5px;overflow:hidden;border:1px solid var(--border)">
+          <button style="padding:5px 10px;border:none;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;background:${(a.directUnit||'坪')==='坪'?'var(--bronze)':'transparent'};color:${(a.directUnit||'坪')==='坪'?'#fff':'var(--muted)'}" onclick="updateAreaUnit('${a.id}','坪',this)">坪</button>
+          <button style="padding:5px 10px;border:none;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;background:${(a.directUnit||'坪')==='㎡'?'var(--bronze)':'transparent'};color:${(a.directUnit||'坪')==='㎡'?'#fff':'var(--muted)'}" onclick="updateAreaUnit('${a.id}','㎡',this)">㎡</button>
+        </div>
+        <span style="font-size:12px;color:var(--bronze);font-weight:700" id="area-direct-${a.id}">${a.directArea?((a.directUnit||'坪')==='坪'?a.directArea+' 坪 / '+(a.directArea*3.305785).toFixed(2)+' ㎡':a.directArea+' ㎡ / '+(a.directArea/3.305785).toFixed(2)+' 坪'):'—'}</span>
+      </div>
+      <div class="fg"><label class="fl">備注</label><input class="fi" value="${a.note}" placeholder="施作說明…" onchange="updateAreaNote('${a.id}',this.value)"></div>
       <div class="fl" style="margin-top:10px;margin-bottom:6px">施工照片</div>
       <div class="photo-grid" id="photos-${a.id}">
         ${a.photos.map((ph,i)=>`<img class="photo-thumb" src="${ph}" onclick="lightbox('${ph}')">`).join('')}
@@ -1071,12 +1112,17 @@ function updateAreaNote(aId, val) {
   if(a) a.note = val;
 }
 function updateAreaDim(aId, dim, val) {
-  const p = DB.projects.find(x=>x.id===currentProjId);
+  const p = DB.projects.find(x=>String(x.id)===String(currentProjId));
   const a = p.areas.find(x=>String(x.id)===String(aId));
   if(!a) return;
   a[dim] = parseFloat(val)||null;
-  const calc = document.getElementById(`area-calc-${aId}`);
-  if(calc) calc.textContent = a.width && a.height ? (a.width*a.height).toFixed(2)+' ㎡' : '—';
+  const calc = document.getElementById('area-calc-'+aId);
+  if(calc) {
+    if(a.width && a.height) {
+      const sqm = a.width*a.height;
+      calc.textContent = sqm.toFixed(2)+' ㎡ / '+(sqm/3.305785).toFixed(2)+' 坪';
+    } else { calc.textContent = '—'; }
+  }
 }
 
 function addPhoto(aId) {
