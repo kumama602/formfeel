@@ -405,6 +405,21 @@ main{padding:20px 24px;max-width:1400px;margin:0 auto}
 </div>
 
 <!-- IMAGE LIGHTBOX -->
+
+<!-- CONTRACT PREVIEW -->
+<div id="contract-preview-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:600;flex-direction:column;align-items:center;justify-content:flex-start;padding:20px">
+  <div style="background:#fff;border-radius:12px;width:100%;max-width:860px;overflow:hidden;display:flex;flex-direction:column;max-height:calc(100vh - 40px)">
+    <div style="background:#3C2414;color:#fff;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
+      <span style="font-weight:700;font-size:14px" id="contract-preview-name">合約文件</span>
+      <button onclick="closeContractPreview()" style="background:rgba(255,255,255,.2);border:none;color:#fff;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:14px">✕</button>
+    </div>
+    <div style="flex:1;overflow:auto;display:flex;align-items:center;justify-content:center;background:#f5f5f5;min-height:300px">
+      <iframe id="contract-preview-frame" src="" style="width:100%;height:70vh;border:none;display:none"></iframe>
+      <img id="contract-preview-img" src="" style="max-width:100%;max-height:70vh;object-fit:contain;display:none;cursor:pointer" onclick="closeContractPreview()">
+    </div>
+  </div>
+</div>
+
 <div class="overlay" id="lightbox" onclick="closeOverlay('lightbox')" style="align-items:center;background:rgba(0,0,0,.85)">
   <img id="lb-img" style="max-width:90%;max-height:85vh;border-radius:8px;object-fit:contain">
 </div>
@@ -576,6 +591,55 @@ const DB = {
   nextWId: 1,
   nextMId: 1,
 };
+
+
+// ── IMAGE / FILE COMPRESS ─────────────────
+async function compressImg(file, maxW=900, q=0.72){
+  return new Promise(res=>{
+    const r=new FileReader();
+    r.onload=e=>{
+      const img=new Image();
+      img.onload=()=>{
+        const c=document.createElement('canvas');
+        let w=img.width,h=img.height;
+        if(w>maxW){h=Math.round(h*maxW/w);w=maxW;}
+        c.width=w;c.height=h;
+        c.getContext('2d').drawImage(img,0,0,w,h);
+        res(c.toDataURL('image/jpeg',q));
+      };
+      img.src=e.target.result;
+    };
+    r.readAsDataURL(file);
+  });
+}
+function pickPhoto(cb){
+  const i=document.createElement('input');
+  i.type='file'; i.accept='image/*'; i.multiple=true;
+  i.onchange=async e=>{ for(const f of Array.from(e.target.files)) cb(await compressImg(f)); };
+  i.click();
+}
+async function compressFile(file){
+  // For images: compress. For PDF: store as base64 with size warning
+  if(file.type.startsWith('image/')){
+    return {name:file.name, type:'image', data:await compressImg(file,1200,0.8)};
+  }
+  return new Promise(res=>{
+    if(file.size > 5*1024*1024){ alert('檔案過大（超過5MB），請壓縮後再上傳'); res(null); return; }
+    const r=new FileReader();
+    r.onload=e=>res({name:file.name, type:'pdf', data:e.target.result});
+    r.readAsDataURL(file);
+  });
+}
+function pickFile(cb){
+  const i=document.createElement('input');
+  i.type='file'; i.accept='.pdf,image/*';
+  i.onchange=async e=>{
+    if(!e.target.files[0]) return;
+    const f=await compressFile(e.target.files[0]);
+    if(f) cb(f);
+  };
+  i.click();
+}
 
 // ─── SEED DATA ───────────────────────────────
 function seedData() {
@@ -928,7 +992,24 @@ function renderClientTab(p) {
       <div class="fg"><label class="fl">已請款</label><input class="fi" id="c-recv" readonly value="${fmtMoney(received)}"></div>
       <div class="fg"><label class="fl">尚餘</label><input class="fi" id="c-rem" readonly value="${fmtMoney(remaining)}" style="color:${remaining>0?'var(--amber)':'var(--green)'}"></div>
     </div>
-  </div>`;
+  </div>
+  <div class="sec-card">
+    <div class="sec-card-title">合約文件</div>
+    <div id="contract-files" style="margin-bottom:10px">
+      ${(c.contracts||[]).map((f,i)=>`
+        <div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--stone);border-radius:7px;margin-bottom:6px">
+          <span style="font-size:18px">${f.type==='image'?'🖼':'📄'}</span>
+          <span style="flex:1;font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${f.name}</span>
+          <button class="btn btn-g btn-xs" onclick="previewContract(${i})">查看</button>
+          <button class="btn btn-d btn-xs" onclick="removeContract(${i})">✕</button>
+        </div>`).join('')}
+    </div>
+    <div onclick="uploadContract()" style="border:2px dashed var(--border);border-radius:8px;padding:16px;text-align:center;cursor:pointer;background:var(--stone)" onmouseover="this.style.borderColor='var(--bl)'" onmouseout="this.style.borderColor='var(--border)'">
+      <div style="font-size:22px">📎</div>
+      <div style="font-size:13px;color:var(--muted);margin-top:4px">點擊上傳合約（PDF 或圖片）</div>
+    </div>
+  </div>
+  `;
 }
 
 function updateContractCalc() {
@@ -1274,6 +1355,45 @@ async function deleteProject(){
   DB.projects=DB.projects.filter(x=>String(x.id)!==String(currentProjId));
   hideBanner();
   closeModalDirect(); renderOverview(); renderProjects(); showToast('案場已刪除');
+}
+
+// ── CONTRACT FUNCTIONS ────────────────────
+function uploadContract(){
+  pickFile(f=>{
+    if(!f) return;
+    const p=DB.projects.find(x=>String(x.id)===String(currentProjId));
+    if(!p.client.contracts) p.client.contracts=[];
+    p.client.contracts.push(f);
+    renderMTab('client');
+  });
+}
+function removeContract(i){
+  const p=DB.projects.find(x=>String(x.id)===String(currentProjId));
+  p.client.contracts.splice(i,1);
+  renderMTab('client');
+}
+function previewContract(i){
+  const p=DB.projects.find(x=>String(x.id)===String(currentProjId));
+  const f=p.client.contracts[i];
+  if(!f) return;
+  const overlay=document.getElementById('contract-preview-overlay');
+  document.getElementById('contract-preview-name').textContent=f.name;
+  const frame=document.getElementById('contract-preview-frame');
+  const img=document.getElementById('contract-preview-img');
+  if(f.type==='image'||f.data.startsWith('data:image')){
+    frame.style.display='none'; frame.src='';
+    img.style.display='block'; img.src=f.data;
+  } else {
+    img.style.display='none'; img.src='';
+    frame.style.display='block'; frame.src=f.data;
+  }
+  overlay.style.display='flex';
+}
+function closeContractPreview(){
+  const o=document.getElementById('contract-preview-overlay');
+  o.style.display='none';
+  document.getElementById('contract-preview-frame').src='';
+  document.getElementById('contract-preview-img').src='';
 }
 
 async function saveProject() {
