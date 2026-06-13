@@ -485,22 +485,23 @@ function hideBanner(){const el=document.getElementById('load-banner');if(el)el.r
 async function loadAll(){
   showBanner('載入資料中...');
   try{
+    const safeGet = async (t,p) => { try { return await api.get(t,p)||[]; } catch(e){ console.warn('Load skip:',t,e); return []; }};
     const [ws,ml,ps,cs,pays,schs,mats,areas,aphots,refs,samps,sphots,rpts,rphots,exps]=await Promise.all([
-      api.get('workers','?order=created_at'),
-      api.get('mat_library','?order=created_at'),
-      api.get('projects','?order=created_at'),
-      api.get('clients','?select=*'),
-      api.get('payments','?order=date'),
-      api.get('schedule','?order=date'),
-      api.get('materials','?order=sort_order'),
-      api.get('areas','?order=sort_order'),
-      api.get('area_photos','?order=sort_order'),
-      api.get('ref_images','?order=sort_order'),
-      api.get('samples','?order=sort_order'),
-      api.get('sample_photos','?order=sort_order'),
-      api.get('reports','?order=sort_order'),
-      api.get('report_photos','?order=sort_order'),
-      api.get('expenses','?order=date'),
+      safeGet('workers','?order=created_at'),
+      safeGet('mat_library','?order=created_at'),
+      safeGet('projects','?order=created_at'),
+      safeGet('clients','?select=*'),
+      safeGet('payments','?order=date'),
+      safeGet('schedule','?order=date'),
+      safeGet('materials','?order=sort_order'),
+      safeGet('areas','?order=sort_order'),
+      safeGet('area_photos','?order=sort_order'),
+      safeGet('ref_images','?order=sort_order'),
+      safeGet('samples','?order=sort_order'),
+      safeGet('sample_photos','?order=sort_order'),
+      safeGet('reports','?order=sort_order'),
+      safeGet('report_photos','?order=sort_order'),
+      safeGet('expenses','?order=date'),
     ]);
 
     DB.workers=(ws||[]).map(w=>({id:w.id,name:w.name,phone:w.phone||'',age:w.age||0,years:w.years||0,defaultRate:w.default_rate||1600,specialty:w.specialty||'',note:w.note||''}));
@@ -845,10 +846,10 @@ function renderSummary() {
   const needBuy = DB.projects.reduce((a,p)=>a+p.materials.filter(m=>m.status==='out').length,0);
   const totalAlerts = DB.projects.reduce((a,p)=>a+p.alerts.length,0);
   document.getElementById('sum-row').innerHTML = `
-    <div class="sum-card ok"><div class="sum-label">施工中</div><div class="sum-value">${active}</div><div class="sum-detail">共 ${DB.projects.length} 個案場</div></div>
-    <div class="sum-card warn"><div class="sum-label">待開工</div><div class="sum-value">${pending}</div></div>
-    <div class="sum-card danger"><div class="sum-label">待補貨</div><div class="sum-value">${needBuy}</div><div class="sum-detail">點擊備料清單查看</div></div>
-    <div class="sum-card"><div class="sum-label">待處理提醒</div><div class="sum-value">${totalAlerts}</div></div>`;
+    <div class="sum-card ok" style="cursor:pointer" onclick="filterFromSummary('施工中')"><div class="sum-label">施工中</div><div class="sum-value">${active}</div><div class="sum-detail">共 ${DB.projects.length} 個案場 · 點擊查看</div></div>
+    <div class="sum-card warn" style="cursor:pointer" onclick="filterFromSummary('待開工')"><div class="sum-label">待開工</div><div class="sum-value">${pending}</div><div class="sum-detail">點擊查看</div></div>
+    <div class="sum-card danger" style="cursor:pointer" onclick="showTab('materials')"><div class="sum-label">待補貨</div><div class="sum-value">${needBuy}</div><div class="sum-detail">點擊備料清單查看</div></div>
+    <div class="sum-card" style="cursor:pointer" onclick="showTab('alerts')"><div class="sum-label">待處理提醒</div><div class="sum-value">${totalAlerts}</div><div class="sum-detail">點擊查看</div></div>`;
   document.getElementById('alert-count').textContent = totalAlerts;
 }
 
@@ -883,10 +884,25 @@ function projCardHTML(p) {
   </div>`;
 }
 
+function filterFromSummary(status) {
+  // Switch to project list tab
+  showTab('projects');
+  // Apply filter
+  const btns = document.querySelectorAll('#proj-filter .tog-btn');
+  btns.forEach(b => {
+    b.classList.remove('active');
+    if(b.textContent === status) b.classList.add('active');
+  });
+  filterProj(status, document.querySelector(`#proj-filter .tog-btn.active`));
+}
+
 function renderOverview() {
   renderSummary();
-  document.getElementById('overview-cards').innerHTML =
-    DB.projects.filter(p=>p.status==='施工中').map(projCardHTML).join('');
+  // Show 施工中 projects in the bottom section
+  const active = DB.projects.filter(p=>p.status==='施工中');
+  document.getElementById('overview-cards').innerHTML = active.length ? active.map(projCardHTML).join('') : '<div style="text-align:center;padding:30px;color:var(--muted);grid-column:1/-1">目前沒有施工中的案場</div>';
+  const hd = document.querySelector('#panel-overview .sec-title');
+  if(hd) hd.textContent = '進行中案場';
 }
 
 function renderAllCards(filter='all') {
