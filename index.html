@@ -1507,7 +1507,18 @@ async function createProject() {
     payments:[], areas:[], schedule:[], materials:[], alerts:[],
     note: document.getElementById('np-note').value,
   };
+  // Add missing fields
+  if(!newP.accommodation) newP.accommodation = {address:'', cost:0, days:0};
+  if(!newP.accessInfo) newP.accessInfo = '';
+  if(!newP.client.contracts) newP.client.contracts = [];
+  if(!newP.refImgs) newP.refImgs = [];
+  if(!newP.samples) newP.samples = [];
+  if(!newP.report) newP.report = [];
+  if(!newP.expenses) newP.expenses = [];
   DB.projects.push(newP);
+  showBanner('建立中...');
+  try { await dbSaveProject(newP); } catch(e) { console.error('create err',e); }
+  hideBanner();
   closeOverlay('new-modal');
   renderOverview();
   renderAllCards();
