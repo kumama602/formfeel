@@ -1845,44 +1845,82 @@ const WEATHER_OPTS=['☀️ 晴天','🌤 多雲','☁️ 陰天','🌧 雨天',
 function renderReportTab(p){
   if(!p.report)p.report=[];
   const sorted=[...p.report].sort((a,b)=>(b.date||'').localeCompare(a.date||''));
-  const html=sorted.map(r=>{
+  // Active editing log id
+  if(!window._activeRptId && sorted.length) window._activeRptId = sorted[0].id;
+  const activeR = sorted.find(r=>String(r.id)===String(window._activeRptId)) || sorted[0];
+  
+  // Build summary list (left column)
+  const listHtml = sorted.map(r=>{
+    const isActive = activeR && String(r.id)===String(activeR.id);
+    const workCount = r.workersCount||0;
+    return `<div onclick="window._activeRptId='${r.id}';renderMTab('report')" style="background:#fff;border:1px solid ${isActive?'var(--bronze)':'var(--border)'};border-radius:10px;padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:all .15s;${isActive?'box-shadow:0 2px 8px rgba(124,93,58,.15)':''}">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:600;color:#2a2a2a;margin-bottom:3px">${r.date||'未填日期'} · ${(r.workHours||p.workHours||'').trim()||'—'} · ${(r.weather||'').replace(/[☀️🌤☁️🌧⛈]/gu,'').trim()||'—'}</div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:6px">合計 ${workCount} 人 · 負責：${r.manager||'—'}</div>
+          ${workCount>0?`<div style="display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;background:var(--stone);color:#555;margin-bottom:6px">油漆工程 ${workCount}人</div>`:''}
+          <div style="font-size:12px;color:#444;line-height:1.5;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;word-break:break-all">${r.caption||'（無說明）'}</div>
+        </div>
+        <button class="btn btn-d btn-xs" onclick="event.stopPropagation();rmRpt('${r.id}')" style="flex-shrink:0">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+  
+  // Build editor (right column, for the active log)
+  let editorHtml = '';
+  if(activeR){
+    const r = activeR;
     const photos=r.photos||[],caps=r.photoCaptions||[];
     let ph='';
     for(let i=0;i<photos.length;i+=2){
       const s1=photos[i],s2=photos[i+1]||null,c1=caps[i]||'',c2=caps[i+1]||'';
       ph+=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
         <div style="border:1px solid var(--border);border-radius:7px;overflow:hidden">
-          <img src="${s1}" style="width:100%;height:160px;object-fit:contain;display:block;cursor:pointer;background:#f5f2ee" onclick="lightbox('${s1}')">
+          <img src="${s1}" style="width:100%;height:140px;object-fit:contain;display:block;cursor:pointer;background:#f5f2ee" onclick="lightbox('${s1}')">
           <input class="fi" style="font-size:11px;padding:5px 8px;border:none;border-top:1px solid var(--border);border-radius:0" placeholder="照片說明…" value="${c1}" oninput="updRptCap('${r.id}',${i},this.value)">
         </div>
         <div style="border:1px solid var(--border);border-radius:7px;overflow:hidden">
-          ${s2?`<img src="${s2}" style="width:100%;height:160px;object-fit:contain;display:block;cursor:pointer;background:#f5f2ee" onclick="lightbox('${s2}')"><input class="fi" style="font-size:11px;padding:5px 8px;border:none;border-top:1px solid var(--border);border-radius:0" placeholder="照片說明…" value="${c2}" oninput="updRptCap('${r.id}',${i+1},this.value)">`:`<div style="width:100%;height:160px;background:var(--stone);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--muted);font-size:22px" onclick="addRptPhoto('${r.id}')">＋</div>`}
+          ${s2?`<img src="${s2}" style="width:100%;height:140px;object-fit:contain;display:block;cursor:pointer;background:#f5f2ee" onclick="lightbox('${s2}')"><input class="fi" style="font-size:11px;padding:5px 8px;border:none;border-top:1px solid var(--border);border-radius:0" placeholder="照片說明…" value="${c2}" oninput="updRptCap('${r.id}',${i+1},this.value)">`:`<div style="width:100%;height:140px;background:var(--stone);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--muted);font-size:22px" onclick="addRptPhoto('${r.id}')">＋</div>`}
         </div>
       </div>`;
     }
-    return `<div class="sc-card" style="margin-bottom:14px">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
-        <div style="font-weight:700;font-size:14px;color:var(--bd)">${r.date||'（未填日期）'}</div>
-        <div style="display:flex;gap:6px"><button class="btn btn-g btn-sm" onclick="addRptPhoto('${r.id}')">＋ 照片</button><button class="btn btn-d btn-xs" onclick="rmRpt('${r.id}')">刪除</button></div>
+    editorHtml = `<div style="background:#fff;border:1px solid var(--border);border-radius:10px;padding:16px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <div style="font-weight:700;font-size:15px;color:var(--bd)">編輯日誌</div>
+        <button class="btn btn-g btn-sm" onclick="addRptPhoto('${r.id}')">＋ 照片</button>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px">
-        <div class="fg" style="margin:0"><label class="fl">日期</label><input class="fi" type="date" value="${r.date||''}" onchange="updRpt('${r.id}','date',this.value)"></div>
-        <div class="fg" style="margin:0"><label class="fl">天氣</label><select class="fs" onchange="updRpt('${r.id}','weather',this.value)">${WEATHER_OPTS.map(w=>`<option ${(r.weather||'☀️ 晴天')===w?'selected':''}>${w}</option>`).join('')}</select></div>
-        <div class="fg" style="margin:0"><label class="fl">出工人數</label><input class="fi" type="number" min="0" value="${r.workersCount||''}" onchange="updRpt('${r.id}','workersCount',+this.value)"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+        <div class="fg" style="margin:0"><label class="fl">日期</label><input class="fi" type="date" value="${r.date||''}" onchange="updRpt('${r.id}','date',this.value);renderMTab('report')"></div>
+        <div class="fg" style="margin:0"><label class="fl">天氣</label><select class="fs" onchange="updRpt('${r.id}','weather',this.value);renderMTab('report')">${WEATHER_OPTS.map(w=>`<option ${(r.weather||'☀️ 晴天')===w?'selected':''}>${w}</option>`).join('')}</select></div>
       </div>
-      <div class="fg" style="margin-bottom:12px"><label class="fl">工程說明</label><textarea class="fta" style="min-height:55px" onchange="updRpt('${r.id}','caption',this.value)">${r.caption||''}</textarea></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+        <div class="fg" style="margin:0"><label class="fl">出工人數</label><input class="fi" type="number" min="0" value="${r.workersCount||''}" placeholder="人" onchange="updRpt('${r.id}','workersCount',+this.value);renderMTab('report')"></div>
+        <div class="fg" style="margin:0"><label class="fl">負責人</label><input class="fi" value="${r.manager||''}" placeholder="例：丘小熊" onchange="updRpt('${r.id}','manager',this.value);renderMTab('report')"></div>
+      </div>
+      <div class="fg" style="margin-bottom:12px"><label class="fl">施工時間</label><input class="fi" value="${r.workHours||''}" placeholder="例：8:00 ~ 17:00" onchange="updRpt('${r.id}','workHours',this.value);renderMTab('report')"></div>
+      <div class="fg" style="margin-bottom:12px"><label class="fl">工程說明</label><textarea class="fta" style="min-height:80px" placeholder="今日施工內容、進度說明…" onchange="updRpt('${r.id}','caption',this.value);renderMTab('report')">${r.caption||''}</textarea></div>
       <div class="fl" style="margin-bottom:8px">施工照片${photos.length>0?` (${photos.length}張)`:''}</div>
       ${ph}${photos.length===0?`<div style="text-align:center;padding:20px;background:var(--stone);border-radius:7px;cursor:pointer;color:var(--muted)" onclick="addRptPhoto('${r.id}')">點擊上傳照片</div>`:''}
     </div>`;
-  }).join('');
-  return `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+  } else {
+    editorHtml = '<div style="text-align:center;padding:60px;color:var(--muted);background:#fff;border:1px solid var(--border);border-radius:10px">尚無日誌，請點上方「＋ 新增日誌」</div>';
+  }
+  
+  return `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:8px">
     <button class="btn" style="background:var(--bd);color:#fff;border:none" onclick="exportReportPDF()">📄 匯出 PDF</button>
     <button class="btn btn-g btn-sm" onclick="addRpt()">＋ 新增日誌</button>
-  </div>${html||'<div style="text-align:center;padding:40px;color:var(--muted)">尚無日誌，點擊上方新增</div>'}`;
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1.2fr;gap:14px;align-items:start">
+    <div style="max-height:600px;overflow-y:auto;padding-right:4px">
+      ${listHtml||'<div style="text-align:center;padding:40px;color:var(--muted)">尚無日誌</div>'}
+    </div>
+    <div>${editorHtml}</div>
+  </div>`;
 }
+
 function updRpt(id,f,v){const p=DB.projects.find(x=>String(x.id)===String(currentProjId));const r=(p.report||[]).find(x=>String(x.id)===String(id));if(r)r[f]=v;}
 function updRptCap(id,idx,val){const p=DB.projects.find(x=>String(x.id)===String(currentProjId));const r=(p.report||[]).find(x=>String(x.id)===String(id));if(!r)return;if(!r.photoCaptions)r.photoCaptions=[];while(r.photoCaptions.length<=idx)r.photoCaptions.push('');r.photoCaptions[idx]=val;}
-function addRpt(){const p=DB.projects.find(x=>String(x.id)===String(currentProjId));if(!p.report)p.report=[];p.report.push({id:Date.now(),date:new Date().toISOString().slice(0,10),weather:'☀️ 晴天',workersCount:1,photos:[],photoCaptions:[],caption:''});renderMTab('report');}
+function addRpt(){const p=DB.projects.find(x=>String(x.id)===String(currentProjId));if(!p.report)p.report=[];const newRpt={id:Date.now(),date:new Date().toISOString().slice(0,10),weather:'☀️ 晴天',workersCount:1,manager:'',workHours:p.workHours||'8:00 ~ 17:00',photos:[],photoCaptions:[],caption:''};p.report.push(newRpt);window._activeRptId=newRpt.id;renderMTab('report');}
 function rmRpt(id){const p=DB.projects.find(x=>String(x.id)===String(currentProjId));p.report=(p.report||[]).filter(x=>String(x.id)!==String(id));renderMTab('report');}
 function addRptPhoto(rid){const input=document.createElement('input');input.type='file';input.accept='image/*';input.multiple=true;input.onchange=async e=>{const p=DB.projects.find(x=>String(x.id)===String(currentProjId));const r=(p.report||[]).find(x=>String(x.id)===String(rid));if(r){for(const f of Array.from(e.target.files)){r.photos.push(await compressImage(f));if(!r.photoCaptions)r.photoCaptions=[];r.photoCaptions.push('');}renderMTab('report');}};input.click();}
 function rmRptPhoto(rid,i){const p=DB.projects.find(x=>String(x.id)===String(currentProjId));const r=(p.report||[]).find(x=>String(x.id)===String(rid));if(r){r.photos.splice(i,1);if(r.photoCaptions)r.photoCaptions.splice(i,1);renderMTab('report');}}
@@ -1894,40 +1932,136 @@ function exportReportPDF(){
   if(!p||!(p.report||[]).length){alert('尚無日誌可匯出');return;}
   const sorted=[...p.report].sort((a,b)=>(a.date||'').localeCompare(b.date||''));
   const pages=[];
-  sorted.forEach(r=>{
-    const photos=r.photos||[],caps=r.photoCaptions||[];
-    const PERPAGE=4;
-    for(let start=0;start<Math.max(photos.length,1);start+=PERPAGE){
-      const chunk=photos.slice(start,start+PERPAGE);
-      const isFirst=start===0;
-      let photoHtml='';
-      for(let i=0;i<chunk.length;i+=2){
-        const p1=chunk[i],p2=chunk[i+1]||null,c1=caps[start+i]||'',c2=caps[start+i+1]||'';
-        photoHtml+=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
-          <div style="border:1px solid #ddd;border-radius:5px;overflow:hidden;background:#f9f9f9"><div style="width:100%;height:200px;display:flex;align-items:center;justify-content:center;background:#f5f3f0"><img src="${p1}" style="max-width:100%;max-height:200px;object-fit:contain"></div><div style="font-size:10px;color:#555;padding:5px 8px;border-top:1px solid #eee">${c1||'（無說明）'}</div></div>
-          <div style="border:1px solid #ddd;border-radius:5px;overflow:hidden;background:#f9f9f9">${p2?`<div style="width:100%;height:200px;display:flex;align-items:center;justify-content:center;background:#f5f3f0"><img src="${p2}" style="max-width:100%;max-height:200px;object-fit:contain"></div><div style="font-size:10px;color:#555;padding:5px 8px;border-top:1px solid #eee">${c2||'（無說明）'}</div>`:`<div style="height:200px;background:#f5f5f5"></div>`}</div>
-        </div>`;
-      }
-      pages.push(`<div style="padding:18mm 20mm;box-sizing:border-box;min-height:260mm;position:relative;background:#fff;margin-bottom:8px;border-radius:4px">
-        ${isFirst?`<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px">
-          <div style="display:flex;align-items:center;gap:12px"><img src="${_LOGO}" style="width:52px;height:52px;border-radius:50%;object-fit:cover"><div><div style="font-size:17px;font-weight:800;color:#2C2318">${p.name}</div><div style="font-size:11px;color:#666;margin-top:2px">${p.address||''}${p.client&&p.client.contact?' | 業主：'+p.client.contact:''}</div></div></div>
-          <div style="text-align:right;font-size:12px;color:#444;line-height:1.9"><div>日期：${r.date||'—'}</div><div>天氣：${r.weather||'—'}</div><div>出工：${r.workersCount||0} 人</div></div>
+  const PERPAGE=4;
+  const ownerName = (p.client&&(p.client.contact||p.client.name))||'—';
+  
+  const buildHeader = (r) => `
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:18px">
+      <div style="display:flex;align-items:center;gap:14px">
+        <img src="${_LOGO}" style="width:58px;height:58px;border-radius:50%;object-fit:cover;flex-shrink:0">
+        <div>
+          <div style="font-size:19px;font-weight:700;color:#1a1a1a;letter-spacing:1px">${p.name}</div>
+          <div style="font-size:11px;color:#666;margin-top:4px">${p.address||''}${ownerName!=='—'?' | 業主：'+ownerName:''}</div>
         </div>
-        <div style="height:1px;background:#3C2414;margin-bottom:12px"></div>
-        <div style="margin-bottom:12px"><div style="font-size:12px;font-weight:700;color:#2C2318;margin-bottom:6px">■ 工程說明</div><div style="font-size:12px;color:#333;background:#f9f7f4;padding:8px 10px;border-radius:5px;white-space:pre-wrap">${r.caption||'（無說明）'}</div></div>
-        ${photos.length>0?`<div style="font-size:12px;font-weight:700;color:#2C2318;margin-bottom:8px">■ 施工照片（${photos.length}張）</div>`:''}`
-        :`<div style="display:flex;justify-content:space-between;padding-bottom:10px;border-bottom:1px solid #ddd;margin-bottom:14px;font-size:13px"><span style="font-weight:700">${p.name}</span><span style="color:#888">${r.date||''}</span></div>`}
-        ${photoHtml}
-        <div style="position:absolute;bottom:6mm;left:20mm;right:20mm;font-size:9px;color:#aaa;display:flex;justify-content:space-between;border-top:1px solid #eee;padding-top:4px"><span>FORM FEEL 施工日誌</span><span>第 ${pages.length+1} 頁</span></div>
+      </div>
+      <div style="text-align:right;font-size:11px;color:#333;line-height:1.85">
+        <div>日期：${r.date||'—'}</div>
+        <div>時間：${r.workHours||p.workHours||'—'}</div>
+        <div>天氣：${(r.weather||'').replace(/[☀️🌤☁️🌧⛈]/gu,'').trim()||'—'}</div>
+        <div>負責人：${r.manager||'—'}</div>
+      </div>
+    </div>`;
+  
+  const buildWorkers = (r) => `
+    <div style="margin-bottom:14px">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+        <span style="width:4px;height:14px;background:#1a1a1a;display:inline-block"></span>
+        <span style="font-size:13px;font-weight:700;color:#1a1a1a">施工人數</span>
+      </div>
+      <div style="font-size:13px;color:#333;padding-left:10px">${r.workersCount||0} 人</div>
+    </div>`;
+  
+  const buildDesc = (r) => `
+    <div style="margin-bottom:14px">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+        <span style="width:4px;height:14px;background:#1a1a1a;display:inline-block"></span>
+        <span style="font-size:13px;font-weight:700;color:#1a1a1a">工程說明</span>
+      </div>
+      <div style="font-size:12px;color:#333;line-height:1.7;white-space:pre-wrap;padding-left:10px">${r.caption||'（無說明）'}</div>
+    </div>`;
+  
+  const buildPhotos = (photos, caps, offset, totalCount, isFirstOfLog) => {
+    let html = '';
+    if(isFirstOfLog && totalCount > 0) {
+      html += `<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+        <span style="width:4px;height:14px;background:#1a1a1a;display:inline-block"></span>
+        <span style="font-size:13px;font-weight:700;color:#1a1a1a">施工照片（${totalCount} 張）</span>
+      </div>`;
+    }
+    for(let i=0;i<photos.length;i+=2){
+      const p1=photos[i], p2=photos[i+1]||null;
+      const c1=caps[offset+i]||'（無說明）', c2=caps[offset+i+1]||'（無說明）';
+      html += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+        <div style="border:1px solid #e0e0e0;border-radius:2px;overflow:hidden;background:#fff">
+          <div style="width:100%;height:240px;display:flex;align-items:center;justify-content:center;background:#f8f8f8">
+            <img src="${p1}" style="max-width:100%;max-height:240px;object-fit:contain;display:block">
+          </div>
+          <div style="font-size:11px;color:#444;padding:8px 12px;background:#fafafa;border-top:1px solid #eee;min-height:18px">${c1}</div>
+        </div>
+        <div style="border:1px solid #e0e0e0;border-radius:2px;overflow:hidden;background:#fff">
+          ${p2 ? `
+            <div style="width:100%;height:240px;display:flex;align-items:center;justify-content:center;background:#f8f8f8">
+              <img src="${p2}" style="max-width:100%;max-height:240px;object-fit:contain;display:block">
+            </div>
+            <div style="font-size:11px;color:#444;padding:8px 12px;background:#fafafa;border-top:1px solid #eee;min-height:18px">${c2}</div>
+          ` : `
+            <div style="width:100%;height:240px;background:#fff"></div>
+            <div style="font-size:11px;padding:8px 12px;background:#fff;min-height:18px"></div>
+          `}
+        </div>
+      </div>`;
+    }
+    return html;
+  };
+  
+  sorted.forEach(r => {
+    const photos = r.photos||[];
+    const caps = r.photoCaptions||[];
+    pages.push(`<div class="rpt-pg">
+      ${buildHeader(r)}
+      ${buildWorkers(r)}
+      ${buildDesc(r)}
+      ${buildPhotos(photos.slice(0, PERPAGE), caps, 0, photos.length, true)}
+      <div class="rpt-foot">
+        <span>FORM FEEL · 施工日誌</span>
+        <span>第 ${pages.length+1} 頁</span>
+      </div>
+    </div>`);
+    for(let start=PERPAGE; start<photos.length; start+=PERPAGE){
+      const chunk = photos.slice(start, start+PERPAGE);
+      pages.push(`<div class="rpt-pg">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;padding-bottom:8px">
+          <img src="${_LOGO}" style="width:24px;height:24px;border-radius:50%;object-fit:cover">
+          <span style="font-size:12px;font-weight:600">${p.name}</span>
+          <span style="font-size:12px;color:#888;margin-left:8px">${r.date||''}</span>
+        </div>
+        ${buildPhotos(chunk, caps, start, photos.length, false)}
+        <div class="rpt-foot">
+          <span>FORM FEEL · 施工日誌</span>
+          <span>第 ${pages.length+1} 頁</span>
+        </div>
       </div>`);
     }
   });
+  
   let overlay=document.getElementById('rpt-pdf-overlay');
-  if(overlay)overlay.remove();
+  if(overlay) overlay.remove();
   overlay=document.createElement('div');
   overlay.id='rpt-pdf-overlay';
   overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:500;display:flex;flex-direction:column;align-items:center;padding:20px;overflow-y:auto';
-  overlay.innerHTML=`<div style="background:#fff;border-radius:12px;width:100%;max-width:860px;overflow:hidden"><div style="background:#3C2414;color:#fff;padding:12px 16px;display:flex;align-items:center;justify-content:space-between"><span style="font-weight:700">施工日誌 — ${p.name}</span><div style="display:flex;gap:8px"><button onclick="window.print()" style="background:rgba(255,255,255,.2);border:none;color:#fff;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px">🖨️ 列印/存PDF</button><button onclick="document.getElementById('rpt-pdf-overlay').remove()" style="background:rgba(255,255,255,.2);border:none;color:#fff;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:14px">✕</button></div></div><div style="padding:10px;background:#eee"><style>@media print{body>*:not(#rpt-pdf-overlay){display:none!important}}</style>${pages.join('')}</div></div>`;
+  overlay.innerHTML=`
+    <style>
+      .rpt-pg{padding:18mm 16mm;box-sizing:border-box;min-height:270mm;position:relative;background:#fff;margin-bottom:8px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang TC','Microsoft JhengHei',sans-serif}
+      .rpt-foot{position:absolute;bottom:8mm;left:16mm;right:16mm;font-size:9px;color:#999;display:flex;justify-content:space-between;padding-top:6px;border-top:1px solid #eee}
+      @media print{
+        body>*:not(#rpt-pdf-overlay){display:none!important}
+        #rpt-pdf-overlay{position:static!important;background:none!important;padding:0!important;overflow:visible!important}
+        #rpt-pdf-overlay>div{box-shadow:none!important;border-radius:0!important}
+        .rpt-pg{page-break-after:always;margin:0!important}
+        .rpt-pg:last-child{page-break-after:auto}
+        .rpt-hdr-bar{display:none!important}
+      }
+    </style>
+    <div style="background:#fff;border-radius:10px;width:100%;max-width:860px;overflow:hidden;box-shadow:0 10px 40px rgba(0,0,0,.3)">
+      <div class="rpt-hdr-bar" style="background:#3C2414;color:#fff;padding:12px 16px;display:flex;align-items:center;justify-content:space-between">
+        <span style="font-weight:700">施工日誌 — ${p.name}</span>
+        <div style="display:flex;gap:8px">
+          <button onclick="window.print()" style="background:rgba(255,255,255,.2);border:none;color:#fff;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px">🖨️ 列印 / 存 PDF</button>
+          <button onclick="document.getElementById('rpt-pdf-overlay').remove()" style="background:rgba(255,255,255,.2);border:none;color:#fff;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:14px">✕</button>
+        </div>
+      </div>
+      <div style="padding:10px;background:#eee">${pages.join('')}</div>
+    </div>`;
   document.body.appendChild(overlay);
 }
 
