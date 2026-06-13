@@ -1576,10 +1576,10 @@ function workerForm(w) {
   <div class="fg"><label class="fl">專長</label><input class="fi" id="wf-spec" value="${w?w.specialty:''}" placeholder="例：批土、麂皮飾、特殊塗料"></div>
   <div class="fg"><label class="fl">備注</label><textarea class="fta" id="wf-note">${w?w.note:''}</textarea></div>
   <div style="display:flex;justify-content:space-between;margin-top:14px">
-    <div>${w?`<button class="btn btn-danger btn-sm" onclick="deleteWorker(${w.id})">刪除師傅</button>`:'<span></span>'}</div>
+    <div>${w?`<button class="btn btn-danger btn-sm" data-wid="${w.id}" onclick="deleteWorker(this.dataset.wid)">刪除師傅</button>`:'<span></span>'}</div>
     <div style="display:flex;gap:8px">
       <button class="btn btn-ghost" onclick="closeOverlay('worker-edit-modal')">取消</button>
-      <button class="btn btn-primary" onclick="saveWorker(${w?w.id:'null'})">儲存</button>
+      <button class="btn btn-primary" data-wid="${w?w.id:''}" onclick="saveWorker(this.dataset.wid||null)">儲存</button>
     </div>
   </div>`;
 }
@@ -1594,7 +1594,7 @@ async function saveWorker(id) {
     specialty:document.getElementById('wf-spec').value,
     note:document.getElementById('wf-note').value,
   };
-  if(id===null) { DB.workers.push({ id:DB.nextWId++, ...data }); }
+  if(!id || id==='null') { DB.workers.push({ id:DB.nextWId++, ...data }); }
   else { const w=DB.workers.find(x=>String(x.id)===String(id)); if(w) Object.assign(w,data); }
   showBanner('儲存中...');
   try { await dbSaveWorkers(); } catch(e) { console.error(e); }
