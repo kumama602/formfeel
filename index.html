@@ -504,7 +504,7 @@ async function loadAll(){
     ]);
 
     DB.workers=(ws||[]).map(w=>({id:w.id,name:w.name,phone:w.phone||'',age:w.age||0,years:w.years||0,defaultRate:w.default_rate||1600,specialty:w.specialty||'',note:w.note||''}));
-    DB.matLibrary=(ml||[]).map(m=>({id:m.id,name:m.name,defaultUnit:m.default_unit||'個',defaultQty:m.default_qty||1,price:m.price||0,isOwned:m.is_owned||false}));
+    DB.matLibrary=(ml||[]).map(m=>({id:m.id,name:m.name,code:m.code||'',defaultUnit:m.default_unit||'個',defaultQty:m.default_qty||1,price:m.price||0,isOwned:m.is_owned||false}));
 
     DB.projects=(ps||[]).map(p=>{
       const c=(cs||[]).find(x=>x.project_id===p.id)||{};
@@ -602,6 +602,21 @@ async function dbDelProject(id){
   await api.del('clients',`?project_id=eq.${id}`);
   await api.del('projects',`?id=eq.${id}`);
 }
+
+// MAT LIBRARY SYNC
+async function dbAddMatLib(m){
+  const r=await api.post('mat_library',{name:m.name,default_unit:m.defaultUnit,default_qty:m.defaultQty,price:m.price||0,is_owned:m.isOwned||false,code:m.code||''});
+  if(r&&r[0]) m.id=r[0].id;
+  return m;
+}
+async function dbUpdateMatLib(m){
+  const row={name:m.name,default_unit:m.defaultUnit,default_qty:m.defaultQty,price:m.price||0,is_owned:m.isOwned||false,code:m.code||''};
+  if(typeof m.id!=='number') await api.patch('mat_library',row,'?id=eq.'+m.id);
+}
+async function dbDelMatLib(id){
+  if(typeof id!=='number') await api.del('mat_library','?id=eq.'+id);
+}
+
 async function dbSaveWorkers(){
   for(const w of DB.workers){
     const row={name:w.name,phone:w.phone||'',age:w.age||0,years:w.years||0,default_rate:w.defaultRate||1600,specialty:w.specialty||'',note:w.note||''};
@@ -982,11 +997,11 @@ function areaConvert(val, unit) {
 }
 function syncAreaConvert() {
   const val = parseFloat(document.getElementById('e-area').value)||0;
-  const p = DB.projects.find(x=>x.id===currentProjId);
+  const p = DB.projects.find(x=>String(x.id)===String(currentProjId));
   document.getElementById('e-area-conv').value = areaConvert(val, p.areaUnit);
 }
 function setAreaUnit(unit, btn) {
-  const p = DB.projects.find(x=>x.id===currentProjId);
+  const p = DB.projects.find(x=>String(x.id)===String(currentProjId));
   p.areaUnit = unit;
   btn.closest('.unit-sw').querySelectorAll('.unit-opt').forEach(b=>b.classList.toggle('active',b.textContent===unit));
   syncAreaConvert();
@@ -1044,7 +1059,7 @@ function renderClientTab(p) {
 }
 
 function updateContractCalc() {
-  const p = DB.projects.find(x=>x.id===currentProjId);
+  const p = DB.projects.find(x=>String(x.id)===String(currentProjId));
   const amt = parseFloat(document.getElementById('c-contract').value)||0;
   const received = p.payments.filter(x=>x.received).reduce((a,b)=>a+b.amount,0);
   document.getElementById('c-recv').value = fmtMoney(received);
@@ -1091,23 +1106,23 @@ function renderAreasTab(p) {
 }
 
 function addArea() {
-  const p = DB.projects.find(x=>x.id===currentProjId);
+  const p = DB.projects.find(x=>String(x.id)===String(currentProjId));
   const newArea = { id: Date.now(), name:'新區域', width:null, height:null, photos:[], note:'' };
   p.areas.push(newArea);
   renderMTab('areas');
 }
 function removeArea(aId) {
-  const p = DB.projects.find(x=>x.id===currentProjId);
+  const p = DB.projects.find(x=>String(x.id)===String(currentProjId));
   p.areas = p.areas.filter(a=>String(a.id)!==String(aId));
   renderMTab('areas');
 }
 function updateAreaName(aId, val) {
-  const p = DB.projects.find(x=>x.id===currentProjId);
+  const p = DB.projects.find(x=>String(x.id)===String(currentProjId));
   const a = p.areas.find(x=>String(x.id)===String(aId));
   if(a) a.name = val;
 }
 function updateAreaNote(aId, val) {
-  const p = DB.projects.find(x=>x.id===currentProjId);
+  const p = DB.projects.find(x=>String(x.id)===String(currentProjId));
   const a = p.areas.find(x=>String(x.id)===String(aId));
   if(a) a.note = val;
 }
@@ -1132,7 +1147,7 @@ function addPhoto(aId) {
     const file = e.target.files[0];
     if(!file) return;
     const compressed = await compressImage(file, 800, 0.75);
-    const p = DB.projects.find(x=>x.id===currentProjId);
+    const p = DB.projects.find(x=>String(x.id)===String(currentProjId));
     const a = p.areas.find(x=>String(x.id)===String(aId));
     if(a) { a.photos.push(compressed); renderMTab('areas'); }
   };
@@ -1206,30 +1221,30 @@ function renderWorkersTab(p) {
 }
 
 function updateScheduleField(sid, field, val) {
-  const p = DB.projects.find(x=>x.id===currentProjId);
+  const p = DB.projects.find(x=>String(x.id)===String(currentProjId));
   const s = p.schedule.find(x=>String(x.id)===String(sid));
   if(s) s[field] = val;
 }
 function updateScheduleWorkerRate(sid, name) {
-  const p = DB.projects.find(x=>x.id===currentProjId);
+  const p = DB.projects.find(x=>String(x.id)===String(currentProjId));
   const s = p.schedule.find(x=>String(x.id)===String(sid));
   const w = DB.workers.find(x=>x.name===name);
   if(s) { s.workerName = name; if(w) s.dailyRate = w.defaultRate; }
   renderMTab('workers-tab');
 }
 function removeSchedule(sid) {
-  const p = DB.projects.find(x=>x.id===currentProjId);
+  const p = DB.projects.find(x=>String(x.id)===String(currentProjId));
   p.schedule = p.schedule.filter(x=>String(x.id)!==String(sid));
   renderMTab('workers-tab');
 }
 function addScheduleRow() {
-  const p = DB.projects.find(x=>x.id===currentProjId);
+  const p = DB.projects.find(x=>String(x.id)===String(currentProjId));
   const firstW = DB.workers[0]||{name:'師傅',defaultRate:1600};
   p.schedule.push({ id:Date.now(), workerId:firstW.id, workerName:firstW.name, week:'Week 1', days:5, dailyRate:firstW.defaultRate, tasks:'' });
   renderMTab('workers-tab');
 }
 function refreshScheduleCost() {
-  const p = DB.projects.find(x=>x.id===currentProjId);
+  const p = DB.projects.find(x=>String(x.id)===String(currentProjId));
   const totalLabor = p.schedule.reduce((a,s)=>a+s.days*s.dailyRate,0);
   const totalDays = p.schedule.reduce((a,s)=>a+s.days,0);
   const mealCost = totalDays * p.mealAllowance;
@@ -1275,7 +1290,7 @@ function renderMatsTab(p) {
     <div style="display:flex;gap:8px">
       <select class="fs" id="mat-quick-add" style="font-size:12px;padding:5px 10px;width:160px">
         <option value="">— 快速選單 —</option>
-        ${DB.matLibrary.map(m=>`<option value="${m.id}">${m.name}</option>`).join('')}
+        ${DB.matLibrary.map(m=>`<option value="${m.id}">${m.name}${m.code?' ('+m.code+')':''}</option>`).join('')}
       </select>
       <button class="btn btn-ghost btn-sm" onclick="quickAddMat()">加入</button>
       <button class="btn btn-ghost btn-sm" onclick="addCustomMat()">＋ 自訂品項</button>
@@ -1292,27 +1307,33 @@ function renderMatsTab(p) {
 }
 
 function updateMat(mid, field, val) {
-  const p = DB.projects.find(x=>x.id===currentProjId);
+  const p = DB.projects.find(x=>String(x.id)===String(currentProjId));
   const m = p.materials.find(x=>String(x.id)===String(mid));
   if(m) m[field] = val;
 }
 function removeMat(mid) {
-  const p = DB.projects.find(x=>x.id===currentProjId);
+  const p = DB.projects.find(x=>String(x.id)===String(currentProjId));
   p.materials = p.materials.filter(x=>String(x.id)!==String(mid));
   renderMTab('mats');
 }
 function quickAddMat() {
   const sel = document.getElementById('mat-quick-add');
-  const libId = parseInt(sel.value);
-  if(!libId) return;
-  const lib = DB.matLibrary.find(x=>x.id===libId);
-  if(!lib) return;
-  const p = DB.projects.find(x=>x.id===currentProjId);
+  const libId = sel.value;
+  if(!libId) { alert('請先從下拉選單選擇備品'); return; }
+  const lib = DB.matLibrary.find(x=>String(x.id)===String(libId));
+  if(!lib) { alert('找不到此備品'); return; }
+  const p = DB.projects.find(x=>String(x.id)===String(currentProjId));
+  if(!p) return;
+  if(!p.materials) p.materials=[];
   p.materials.push({ id:Date.now(), libId:lib.id, name:lib.name, code:lib.code||'', unit:lib.defaultUnit, qty:lib.defaultQty, price:lib.price||0, isOwned:lib.isOwned, status:'ok', note:'' });
+  sel.value = '';
   renderMTab('mats');
+  showToast('已加入 '+lib.name+'，記得按儲存才會存到雲端');
 }
 function addCustomMat() {
-  const p = DB.projects.find(x=>x.id===currentProjId);
+  const p = DB.projects.find(x=>String(x.id)===String(currentProjId));
+  if(!p) return;
+  if(!p.materials) p.materials = [];
   p.materials.push({ id:Date.now(), name:'新品項', code:'', unit:'個', qty:1, price:0, isOwned:false, status:'ok', note:'' });
   renderMTab('mats');
 }
@@ -1364,23 +1385,23 @@ function renderPaymentsTab(p) {
 }
 
 function updatePayment(pid, field, val) {
-  const p = DB.projects.find(x=>x.id===currentProjId);
+  const p = DB.projects.find(x=>String(x.id)===String(currentProjId));
   const pay = p.payments.find(x=>x.id===pid);
   if(pay) pay[field] = val;
 }
 function removePayment(pid) {
-  const p = DB.projects.find(x=>x.id===currentProjId);
+  const p = DB.projects.find(x=>String(x.id)===String(currentProjId));
   p.payments = p.payments.filter(x=>String(x.id)!==String(pid));
   renderMTab('payments');
 }
 function addPayment() {
-  const p = DB.projects.find(x=>x.id===currentProjId);
+  const p = DB.projects.find(x=>String(x.id)===String(currentProjId));
   const today = new Date().toISOString().slice(0,10);
   p.payments.push({ id:Date.now(), date:today, amount:0, note:'', received:false });
   renderMTab('payments');
 }
 function refreshPayments() {
-  const p = DB.projects.find(x=>x.id===currentProjId);
+  const p = DB.projects.find(x=>String(x.id)===String(currentProjId));
   const contractEl = document.getElementById('pay-contract');
   if(contractEl) p.client.contractAmt = parseFloat(contractEl.value)||0;
   const received = p.payments.filter(x=>x.received).reduce((a,b)=>a+b.amount,0);
@@ -1624,33 +1645,40 @@ function renderMatMgr() {
   document.getElementById('mat-mgr-body').innerHTML = `
   <div style="overflow-x:auto">
     <table class="tbl">
-      <thead><tr><th>品名</th><th>預設單位</th><th>預設數量</th><th>單價</th><th>類型</th><th></th></tr></thead>
+      <thead><tr><th>品名</th><th>規格</th><th>預設單位</th><th>預設數量</th><th>單價</th><th>類型</th><th></th></tr></thead>
       <tbody>
         ${DB.matLibrary.map(m=>`
           <tr>
-            <td><input class="fi" style="font-size:12px;padding:4px 8px;width:110px" value="${m.name}" onchange="updateMatLib(${m.id},'name',this.value)"></td>
-            <td><input class="fi" style="font-size:12px;padding:4px 8px;width:60px" value="${m.defaultUnit}" onchange="updateMatLib(${m.id},'defaultUnit',this.value)"></td>
-            <td><input class="fi" type="number" style="width:60px;font-size:12px;padding:4px 8px" value="${m.defaultQty}" onchange="updateMatLib(${m.id},'defaultQty',+this.value)"></td>
-            <td><input class="fi" type="number" style="width:80px;font-size:12px;padding:4px 8px" value="${m.price||0}" onchange="updateMatLib(${m.id},'price',+this.value)"></td>
-            <td><select class="fs" style="font-size:11px;padding:3px 6px" onchange="updateMatLib(${m.id},'isOwned',this.value==='true')">
+            <td><input class="fi" style="font-size:12px;padding:4px 8px;width:100px" value="${m.name}" onchange="updateMatLib('${m.id}','name',this.value)"></td>
+            <td><input class="fi" style="font-size:12px;padding:4px 8px;width:80px" placeholder="25kg" value="${m.code||''}" onchange="updateMatLib('${m.id}','code',this.value)"></td>
+            <td><input class="fi" style="font-size:12px;padding:4px 8px;width:60px" value="${m.defaultUnit}" onchange="updateMatLib('${m.id}','defaultUnit',this.value)"></td>
+            <td><input class="fi" type="number" style="width:60px;font-size:12px;padding:4px 8px" value="${m.defaultQty}" onchange="updateMatLib('${m.id}','defaultQty',+this.value)"></td>
+            <td><input class="fi" type="number" style="width:80px;font-size:12px;padding:4px 8px" value="${m.price||0}" onchange="updateMatLib('${m.id}','price',+this.value)"></td>
+            <td><select class="fs" style="font-size:11px;padding:3px 6px" onchange="updateMatLib('${m.id}','isOwned',this.value==='true')">
               <option ${!m.isOwned?'selected':''} value="false">採購</option>
               <option ${m.isOwned?'selected':''} value="true">自有</option>
             </select></td>
-            <td><button class="btn btn-danger btn-xs" onclick="removeMatLib(${m.id})">✕</button></td>
+            <td><button class="btn btn-danger btn-xs" onclick="removeMatLib('${m.id}')">✕</button></td>
           </tr>`).join('')}
       </tbody>
     </table>
   </div>`;
 }
-function addMatItem() {
-  DB.matLibrary.push({ id:DB.nextMId++, name:'新品項', defaultUnit:'個', defaultQty:1, price:0, isOwned:false });
+async function addMatItem() {
+  const m={ id:DB.nextMId++, name:'新品項', defaultUnit:'個', defaultQty:1, price:0, isOwned:false, code:'' };
+  DB.matLibrary.push(m);
   renderMatMgr();
+  try{ await dbAddMatLib(m); renderMatMgr(); }catch(e){console.error(e);}
 }
-function updateMatLib(id, field, val) {
-  const m = DB.matLibrary.find(x=>x.id===id);
-  if(m) m[field] = val;
+async function updateMatLib(id, field, val) {
+  const m = DB.matLibrary.find(x=>String(x.id)===String(id));
+  if(!m) return;
+  m[field] = val;
+  try{ await dbUpdateMatLib(m); }catch(e){console.error(e);}
 }
-function removeMatLib(id) {
+async function removeMatLib(id) {
+  if(!confirm('確定刪除？')) return;
+  try{ await dbDelMatLib(id); }catch(e){console.error(e);}
   DB.matLibrary = DB.matLibrary.filter(x=>String(x.id)!==String(id));
   renderMatMgr();
 }
