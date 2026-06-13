@@ -1534,7 +1534,7 @@ function openWorkerDB() {
 }
 function renderWorkerCards() {
   document.getElementById('worker-cards').innerHTML = DB.workers.map(w=>`
-    <div class="worker-card" onclick="openEditWorker(${w.id})">
+    <div class="worker-card" data-wid="${w.id}" onclick="openEditWorker(this.dataset.wid)">
       <div style="display:flex;gap:12px;align-items:center;margin-bottom:10px">
         <div class="worker-avatar">${w.name[0]}</div>
         <div>
