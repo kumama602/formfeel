@@ -485,7 +485,20 @@ function hideBanner(){const el=document.getElementById('load-banner');if(el)el.r
 async function loadAll(){
   showBanner('載入資料中...');
   try{
-    const safeGet = async (t,p) => { try { return await api.get(t,p)||[]; } catch(e){ console.warn('Load skip:',t,e); return []; }};
+    const safeGet = async (t,p) => { 
+      try { 
+        const r = await api.get(t,p);
+        const cnt = r ? r.length : 0;
+        window._loadCounts = window._loadCounts || {};
+        window._loadCounts[t] = cnt;
+        return r||[]; 
+      } catch(e){ 
+        window._loadErrors = window._loadErrors || [];
+        window._loadErrors.push({t, msg:e.message});
+        console.warn('Load skip:',t,e); 
+        return []; 
+      }
+    };
     const [ws,ml,ps,cs,pays,schs,mats,areas,aphots,refs,samps,sphots,rpts,rphots,exps]=await Promise.all([
       safeGet('workers','?order=created_at'),
       safeGet('mat_library','?order=created_at'),
@@ -555,6 +568,22 @@ async function loadAll(){
     });
   }catch(e){console.error('loadAll error',e);}
   hideBanner();
+  // Diagnostic: warn user if mat_library load failed or is empty
+  if(!DB.matLibrary || DB.matLibrary.length===0){
+    const cnt = (window._loadCounts && window._loadCounts.mat_library);
+    const errs = (window._loadErrors || []).filter(e=>e.t==='mat_library');
+    let msg = '⚠️ 備品庫載入失敗或為空！';
+    if(errs.length) msg += ' 錯誤: ' + errs[0].msg;
+    else if(cnt === 0) msg += ' Supabase 回傳 0 筆。';
+    else msg += ' 無法連線。';
+    msg += ' 請聯絡管理員。';
+    const bnr = document.createElement('div');
+    bnr.style.cssText = 'position:fixed;top:50px;left:50%;transform:translateX(-50%);background:#c45454;color:#fff;padding:10px 20px;border-radius:8px;z-index:9999;font-size:13px;max-width:90%;text-align:center';
+    bnr.textContent = msg;
+    bnr.onclick = () => bnr.remove();
+    document.body.appendChild(bnr);
+    setTimeout(() => bnr.remove(), 8000);
+  }
   renderOverview();renderAllCards();
 }
 
@@ -1276,28 +1305,28 @@ function renderMatsTab(p) {
   const statusLabel = {ok:'充足',low:'庫存低',out:'需補貨'};
   const rows = p.materials.map(m => `
     <tr>
-      <td><input class="fi" style="font-size:12px;padding:4px 8px;width:110px" value="${m.name}" onchange="updateMat(${m.id},'name',this.value)"></td>
-      <td><input class="fi" style="font-size:12px;padding:4px 8px;width:110px" value="${m.code||''}" placeholder="規格/型號" onchange="updateMat(${m.id},'code',this.value)"></td>
-      <td><input class="fi" type="number" style="width:60px;font-size:12px;padding:4px 8px" value="${m.qty}" onchange="updateMat(${m.id},'qty',+this.value)"></td>
-      <td><input class="fi" style="width:50px;font-size:12px;padding:4px 8px" value="${m.unit}" onchange="updateMat(${m.id},'unit',this.value)"></td>
+      <td><input class="fi" style="font-size:12px;padding:4px 8px;width:110px" value="${m.name}" onchange="updateMat('${m.id}','name',this.value)"></td>
+      <td><input class="fi" style="font-size:12px;padding:4px 8px;width:110px" value="${m.code||''}" placeholder="規格/型號" onchange="updateMat('${m.id}','code',this.value)"></td>
+      <td><input class="fi" type="number" style="width:60px;font-size:12px;padding:4px 8px" value="${m.qty}" onchange="updateMat('${m.id}','qty',+this.value)"></td>
+      <td><input class="fi" style="width:50px;font-size:12px;padding:4px 8px" value="${m.unit}" onchange="updateMat('${m.id}','unit',this.value)"></td>
       <td>
         <div style="display:flex;align-items:center;gap:4px">
           <span style="font-size:11px;color:var(--muted)">NT$</span>
-          <input class="fi" type="number" style="width:70px;font-size:12px;padding:4px 8px" value="${m.price||0}" onchange="updateMat(${m.id},'price',+this.value)">
+          <input class="fi" type="number" style="width:70px;font-size:12px;padding:4px 8px" value="${m.price||0}" onchange="updateMat('${m.id}','price',+this.value)">
         </div>
       </td>
       <td>
-        <select class="fs" style="font-size:11px;padding:3px 6px;width:80px" onchange="updateMat(${m.id},'isOwned',this.value==='true')">
+        <select class="fs" style="font-size:11px;padding:3px 6px;width:80px" onchange="updateMat('${m.id}','isOwned',this.value==='true')">
           <option ${!m.isOwned?'selected':''} value="false">採購</option>
           <option ${m.isOwned?'selected':''} value="true">自有</option>
         </select>
       </td>
       <td>
-        <select class="fs" style="font-size:11px;padding:3px 6px;width:76px" onchange="updateMat(${m.id},'status',this.value)">
+        <select class="fs" style="font-size:11px;padding:3px 6px;width:76px" onchange="updateMat('${m.id}','status',this.value)">
           ${statusOpts.map(s=>`<option ${m.status===s?'selected':''} value="${s}">${statusLabel[s]}</option>`).join('')}
         </select>
       </td>
-      <td><button class="btn btn-danger btn-xs" onclick="removeMat(${m.id})">✕</button></td>
+      <td><button class="btn btn-danger btn-xs" onclick="removeMat('${m.id}')">✕</button></td>
     </tr>`).join('');
 
   return `
