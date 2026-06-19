@@ -1226,17 +1226,17 @@ function lightbox(src) {
 // ─── WORKERS TAB ─────────────────────────────
 function renderWorkersTab(p) {
   const rows = p.schedule.map(s => `
-    <tr>
-      <td><select class="fs" style="font-size:12px;padding:4px 8px;width:80px" onchange="updateScheduleField(${s.id},'workerName',this.value);updateScheduleWorkerRate(${s.id},this.value)">
+    <tr data-sid="${s.id}">
+      <td><select class="fs" style="font-size:12px;padding:4px 8px;width:80px" onchange="updateScheduleField('${s.id}','workerName',this.value);updateScheduleWorkerRate('${s.id}',this.value)">
         ${DB.workers.map(w=>`<option ${w.name===s.workerName?'selected':''}>${w.name}</option>`).join('')}
         <option ${!DB.workers.find(w=>w.name===s.workerName)?'selected':''} value="${s.workerName}">${DB.workers.find(w=>w.name===s.workerName)?'':s.workerName||'—'}</option>
       </select></td>
-      <td><input class="fi" type="date" style="width:140px;font-size:12px;padding:4px 8px" value="${s.date||s.week||''}" onchange="updateScheduleField(${s.id},'date',this.value);updateScheduleField(${s.id},'week',this.value)"></td>
-      <td><input class="fi" type="number" step="0.5" min="0.5" style="width:65px;font-size:12px;padding:4px 8px" value="${s.days}" placeholder="天" onchange="updateScheduleField(${s.id},'days',+this.value);refreshScheduleCost()"></td>
-      <td><input class="fi" type="number" style="width:80px;font-size:12px;padding:4px 8px" value="${s.dailyRate}" onchange="updateScheduleField(${s.id},'dailyRate',+this.value);refreshScheduleCost()"></td>
-      <td><input class="fi" style="font-size:12px;padding:4px 8px" value="${s.tasks}" onchange="updateScheduleField(${s.id},'tasks',this.value)"></td>
-      <td style="font-weight:600;color:var(--bronze)">NT$ ${(s.days*s.dailyRate).toLocaleString()}</td>
-      <td><button class="btn btn-danger btn-xs" onclick="removeSchedule(${s.id})">✕</button></td>
+      <td><input class="fi" type="date" style="width:140px;font-size:12px;padding:4px 8px" value="${s.date||s.week||''}" onchange="updateScheduleField('${s.id}','date',this.value);updateScheduleField('${s.id}','week',this.value)"></td>
+      <td><input class="fi" type="number" step="0.5" min="0.5" style="width:65px;font-size:12px;padding:4px 8px" value="${s.days}" placeholder="天" onchange="updateScheduleField('${s.id}','days',+this.value);refreshScheduleCost()"></td>
+      <td><input class="fi" type="number" style="width:80px;font-size:12px;padding:4px 8px" value="${s.dailyRate}" onchange="updateScheduleField('${s.id}','dailyRate',+this.value);refreshScheduleCost()"></td>
+      <td><input class="fi" style="font-size:12px;padding:4px 8px" value="${s.tasks}" onchange="updateScheduleField('${s.id}','tasks',this.value)"></td>
+      <td style="font-weight:600;color:var(--bronze)" data-subtotal="${s.id}">NT$ ${(s.days*s.dailyRate).toLocaleString()}</td>
+      <td><button class="btn btn-danger btn-xs" data-sid="${s.id}" onclick="removeSchedule(this.dataset.sid)">✕</button></td>
     </tr>`).join('');
 
   const totalLabor = p.schedule.reduce((a,s)=>a+s.days*s.dailyRate,0);
@@ -1290,6 +1290,13 @@ function addScheduleRow() {
 }
 function refreshScheduleCost() {
   const p = DB.projects.find(x=>String(x.id)===String(currentProjId));
+  if(!p) return;
+  // Update each row's subtotal
+  p.schedule.forEach(s => {
+    const cell = document.querySelector(`[data-subtotal="${s.id}"]`);
+    if(cell) cell.textContent = 'NT$ ' + (s.days*s.dailyRate).toLocaleString();
+  });
+  // Update totals
   const totalLabor = p.schedule.reduce((a,s)=>a+s.days*s.dailyRate,0);
   const totalDays = p.schedule.reduce((a,s)=>a+s.days,0);
   const mealCost = totalDays * p.mealAllowance;
@@ -1297,6 +1304,12 @@ function refreshScheduleCost() {
   if(el1) el1.textContent=fmtMoney(totalLabor);
   if(el2) el2.textContent=fmtMoney(mealCost);
   if(el3) el3.textContent=fmtMoney(totalLabor+mealCost+p.fuelCost);
+  // Update meal display label (X工 × NTYY)
+  const mealLbl = document.querySelector('#sc-meal');
+  if(mealLbl){
+    const parent = mealLbl.parentElement.querySelector('.cost-lbl');
+    if(parent) parent.textContent = `餐費（${totalDays}工 × NT$${p.mealAllowance}）`;
+  }
 }
 
 // ─── MATERIALS TAB ─────────────────────────
