@@ -2246,6 +2246,26 @@ function renderExpensesTab(p){
 }
 function updExp(id,f,v){const p=DB.projects.find(x=>String(x.id)===String(currentProjId));const e=(p.expenses||[]).find(x=>String(x.id)===String(id));if(e)e[f]=v;}
 function addExp(){const p=DB.projects.find(x=>String(x.id)===String(currentProjId));if(!p.expenses)p.expenses=[];p.expenses.push({id:Date.now(),date:new Date().toISOString().slice(0,10),item:'',amount:0,note:'',reimbursed:false});renderMTab('expenses');}
+function addExpPhoto(eid){
+  pickPhoto(data=>{
+    const p=DB.projects.find(x=>String(x.id)===String(currentProjId));
+    const e=p.expenses.find(x=>String(x.id)===String(eid));
+    if(e){
+      if(!e.photos) e.photos=[];
+      e.photos.push(data);
+      renderMTab('expenses');
+    }
+  });
+}
+function rmExpPhoto(eid,idx){
+  const p=DB.projects.find(x=>String(x.id)===String(currentProjId));
+  const e=p.expenses.find(x=>String(x.id)===String(eid));
+  if(e&&e.photos){
+    e.photos.splice(idx,1);
+    renderMTab('expenses');
+  }
+}
+
 function rmExp(id){const p=DB.projects.find(x=>String(x.id)===String(currentProjId));p.expenses=(p.expenses||[]).filter(x=>String(x.id)!==String(id));renderMTab('expenses');}
 
 // ═══════════════════════════════════════════════
