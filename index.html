@@ -6,11 +6,41 @@
 <title>FORM FEEL 案場管理系統 v2</title>
 <style>
 :root {
-  --cream:#F0EDE8;--stone:#E5E0D8;--bronze:#7A5C3E;--bl:#A07850;--bd:#5A3E28;
-  --text:#2C2318;--muted:#8A7A6A;--white:#FDFCFA;--border:#D8D0C4;
-  --green:#5A7A5A;--red:#8A3A2A;--amber:#A07828;--blue:#3A5A8A;
-  --shadow:0 2px 12px rgba(90,60,30,.10);--r:10px;
+  --cream:#1a1814;--stone:#252220;--bronze:#B8966A;--bl:#D4A574;--bd:#8B6B47;
+  --text:#E8E4DC;--muted:#9A9088;--white:#2A2723;--border:#3A3530;
+  --green:#7A9A7A;--red:#C45454;--amber:#D4A540;--blue:#6890C0;
+  --shadow:0 2px 16px rgba(0,0,0,.4);--r:10px;
+  --bg-page:#0F0D0B;
+  --bg-card:#1F1C18;
+  --bg-elev:#2A2622;
 }
+body { background:var(--bg-page); color:var(--text); }
+input.fi, textarea.fta, select.fs { background:var(--bg-elev)!important; color:var(--text)!important; border-color:var(--border)!important; }
+input.fi:focus, textarea.fta:focus, select.fs:focus { border-color:var(--bronze)!important; outline:none; }
+input.fi::placeholder { color:var(--muted); }
+.sc, .sec-card, .pcard, .worker-card, .sum-card { background:var(--bg-card)!important; }
+.tbl { background:var(--bg-card)!important; }
+.tbl th { background:var(--bg-elev)!important; color:var(--bronze)!important; }
+.tbl td { border-color:var(--border)!important; color:var(--text); }
+.mhdr { background:var(--bd)!important; }
+.mbody, .modal { background:var(--bg-page)!important; }
+.tabs { background:var(--bg-card); border-color:var(--border); }
+.tab.active { color:var(--bronze); border-color:var(--bronze); }
+.tab { color:var(--muted); }
+.mtab.active { color:var(--bronze); border-color:var(--bronze); }
+.fl { color:var(--muted)!important; }
+.btn { background:var(--bg-elev); color:var(--text); border-color:var(--border); }
+.btn-g { background:var(--green); color:#fff; }
+.btn-d { background:var(--red); color:#fff; }
+.btn-ghost { background:transparent; border:1px solid var(--border); color:var(--text); }
+header { background:var(--bg-card)!important; border-color:var(--border)!important; }
+.panel { background:var(--bg-page); }
+.cost-row, .cost-total { color:var(--text); border-color:var(--border); }
+.cost-lbl { color:var(--muted); }
+.cost-val { color:var(--text); }
+.cost-total { background:var(--bg-elev)!important; color:var(--bronze); }
+.tog-btn { background:var(--bg-elev); color:var(--muted); border-color:var(--border); }
+.tog-btn.active { background:var(--bronze); color:var(--bg-page); }
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'PingFang TC','Noto Sans TC',sans-serif;background:var(--cream);color:var(--text);min-height:100vh}
 /* SCROLLBAR */
@@ -553,7 +583,7 @@ async function loadAll(){
           const photos=(rphots||[]).filter(ph=>ph.report_id===r.id).map(ph=>ph.data);
           return {id:r.id,date:r.date||'',weather:r.weather||'☀️ 晴天',workersCount:r.workers_count||0,caption:r.caption||'',photos,photoCaptions:r.photo_captions||[]};
         }),
-        expenses:(exps||[]).filter(x=>x.project_id===p.id).map(x=>{return {id:x.id,date:x.date||'',item:x.item||'',amount:x.amount||0,note:x.note||'',reimbursed:x.reimbursed||false}}),
+        expenses:(exps||[]).filter(x=>x.project_id===p.id).map(x=>{return {id:x.id,date:x.date||'',item:x.item||'',amount:x.amount||0,note:x.note||'',reimbursed:x.reimbursed||false,photos:x.photos||[]}}),
         alerts:[],
       };
     });
@@ -626,7 +656,7 @@ async function dbSaveAll(p){
   for(let i=0;i<p.report.length;i++){const r=p.report[i];const rr=await api.post('reports',{project_id:p.id,date:r.date||null,weather:r.weather||'☀️ 晴天',workers_count:r.workersCount||0,caption:r.caption||'',photo_captions:r.photoCaptions||[],sort_order:i});if(rr&&rr[0]){r.id=rr[0].id;for(let j=0;j<r.photos.length;j++)await api.post('report_photos',{report_id:r.id,data:r.photos[j],sort_order:j});}}
   // expenses
   await api.del('expenses',`?project_id=eq.${p.id}`);
-  for(const x of p.expenses){const r=await api.post('expenses',{project_id:p.id,date:x.date,item:x.item||'',amount:x.amount||0,note:x.note||'',reimbursed:x.reimbursed});if(r&&r[0])x.id=r[0].id;}
+  for(const x of p.expenses){const r=await api.post('expenses',{project_id:p.id,date:x.date,item:x.item||'',amount:x.amount||0,note:x.note||'',reimbursed:x.reimbursed,photos:x.photos||[]});if(r&&r[0])x.id=r[0].id;}
 }
 async function dbDelProject(id){
   await api.del('clients',`?project_id=eq.${id}`);
@@ -2180,13 +2210,23 @@ function renderExpensesTab(p){
   const recv=(p.payments||[]).filter(x=>x.received).reduce((a,b)=>a+b.amount,0);
   const profit=contract-total;
   const fmtM=n=>'NT$ '+(n||0).toLocaleString();
-  const rows=(p.expenses||[]).map(e=>`<tr>
-    <td><input class="fi" type="date" style="width:128px;font-size:12px;padding:4px 7px" value="${e.date||''}" onchange="updExp('${e.id}','date',this.value)"></td>
-    <td><input class="fi" style="font-size:12px;padding:4px 7px" value="${e.item||''}" placeholder="說明" onchange="updExp('${e.id}','item',this.value)"></td>
-    <td><input class="fi" type="number" style="width:100px;font-size:12px;padding:4px 7px" value="${e.amount||0}" onchange="updExp('${e.id}','amount',+this.value);renderMTab('expenses')"></td>
-    <td><select class="fs" style="font-size:12px;padding:4px 7px;width:80px" onchange="updExp('${e.id}','reimbursed',this.value==='true');renderMTab('expenses')"><option ${e.reimbursed?'selected':''} value="true">✓已還</option><option ${!e.reimbursed?'selected':''} value="false">⏳未還</option></select></td>
-    <td><button class="btn btn-d btn-xs" onclick="rmExp('${e.id}')">✕</button></td>
-  </tr>`).join('');
+  const rows=(p.expenses||[]).map(e=>{
+    const photos=(e.photos||[]);
+    const photoHtml = photos.length ? `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">${photos.map((ph,pi)=>`<div style="position:relative;width:54px;height:54px;border-radius:5px;overflow:hidden;border:1px solid var(--border)"><img src="${ph}" style="width:100%;height:100%;object-fit:cover;cursor:pointer" onclick="lightbox('${ph}')"><button data-eid="${e.id}" data-pi="${pi}" onclick="rmExpPhoto(this.dataset.eid,+this.dataset.pi)" style="position:absolute;top:1px;right:1px;background:rgba(180,40,20,.85);color:#fff;border:none;border-radius:50%;width:16px;height:16px;font-size:10px;cursor:pointer;line-height:1;padding:0">✕</button></div>`).join('')}</div>` : '';
+    return `<tr>
+      <td><input class="fi" type="date" style="width:128px;font-size:12px;padding:4px 7px" value="${e.date||''}" onchange="updExp('${e.id}','date',this.value)"></td>
+      <td>
+        <input class="fi" style="font-size:12px;padding:4px 7px" value="${e.item||''}" placeholder="說明" onchange="updExp('${e.id}','item',this.value)">
+        ${photoHtml}
+      </td>
+      <td><input class="fi" type="number" style="width:100px;font-size:12px;padding:4px 7px" value="${e.amount||0}" onchange="updExp('${e.id}','amount',+this.value);renderMTab('expenses')"></td>
+      <td><select class="fs" style="font-size:12px;padding:4px 7px;width:80px" onchange="updExp('${e.id}','reimbursed',this.value==='true');renderMTab('expenses')"><option ${e.reimbursed?'selected':''} value="true">✓已還</option><option ${!e.reimbursed?'selected':''} value="false">⏳未還</option></select></td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-g btn-xs" data-eid="${e.id}" onclick="addExpPhoto(this.dataset.eid)" title="加入發票/收據照片">📎</button>
+        <button class="btn btn-d btn-xs" onclick="rmExp('${e.id}')">✕</button>
+      </td>
+    </tr>`;
+  }).join('');
   return `<div style="background:${profit>=0?'linear-gradient(120deg,#3A5A3A,#5A7A5A)':'linear-gradient(120deg,#8A3A2A,#A05040)'};color:#fff;border-radius:var(--r);padding:16px 18px;margin-bottom:14px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
     <div style="flex:1"><div style="font-size:10px;opacity:.7">合約金額</div><div style="font-size:17px;font-weight:700">${fmtM(contract)}</div></div>
     <div style="opacity:.4;font-size:18px">−</div>
